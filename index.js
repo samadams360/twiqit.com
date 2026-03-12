@@ -1,7 +1,7 @@
 const express = require("express");
-app.set('trust proxy', true);
 const path = require("path");
 const app = express();
+app.set('trust proxy', true);
 const port = process.env.PORT || 3000;
 // Serve static files from the "public" folder
 app.use(express.static(path.join(__dirname, "public")));
