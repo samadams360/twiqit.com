@@ -1,4 +1,5 @@
 const express = require("express");
+app.set('trust proxy', true);
 const path = require("path");
 const app = express();
 const port = process.env.PORT || 3000;
