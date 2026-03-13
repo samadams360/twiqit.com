@@ -356,24 +356,26 @@
       text-align: left;
     }
 
-    .footer-col:nth-child(2) {
-      display: flex;
-      justify-content: center;
-      text-align: left;
-    }
+    @media (min-width: 600px) {
+      .footer-col:nth-child(2) {
+        display: flex;
+        justify-content: center;
+        text-align: left;
+      }
 
-    .footer-col:nth-child(2) .footer-col-inner {
-      text-align: left;
-    }
+      .footer-col:nth-child(2) .footer-col-inner {
+        text-align: left;
+      }
 
-    .footer-col:last-child {
-      display: flex;
-      justify-content: flex-end;
-      text-align: left;
-    }
+      .footer-col:last-child {
+        display: flex;
+        justify-content: flex-end;
+        text-align: left;
+      }
 
-    .footer-col:last-child .footer-col-inner {
-      text-align: left;
+      .footer-col:last-child .footer-col-inner {
+        text-align: left;
+      }
     }
 
     .footer-col h4 {
