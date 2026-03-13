@@ -2,70 +2,507 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Twiqit Hello World</title>
+  <title>Twiqit Labs · Portfolio</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Twiqit Labs is the product studio of Desert Bay, LLC, building a small portfolio of internet businesses including the Buy on Chance e‑commerce concept." />
   <style>
+    :root {
+      --bg: #304d44;
+      --bg-horizon: url("data:image/svg+xml,%3Csvg width='1600' height='400' viewBox='0 0 1600 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23000000' stop-opacity='0.28'/%3E%3Cstop offset='1' stop-color='%23000000' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1600' height='400' fill='url(%23g)'/%3E%3C/svg%3E");
+      --accent: #933333;
+      --accent-soft: #f3e8eb;
+      --accent-muted: #b45353;
+      --text-main: #333333;
+      --text-muted: #666666;
+      --text-soft: #999999;
+      --border-subtle: #d4d4d4;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --radius-lg: 12px;
+      --radius-pill: 999px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
+      font-family: helvetica, arial, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+      background:
+        var(--bg-horizon) top center repeat-x,
+        var(--bg);
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+      text-align: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 960px;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      box-shadow: var(--shadow-soft);
+      padding: 26px 28px 22px;
+      text-align: left;
+    }
+
+    @media (min-width: 768px) {
+      .page {
+        padding: 30px 36px 26px;
+      }
+    }
+
+    .page-header {
+      margin: -26px -28px 22px; /* pull header to full width of card */
+      height: 120px;
+      background: #333 url("images/web_header.png") center bottom no-repeat;
+      background-size: cover;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .page-header {
+        margin: -30px -36px 24px;
+        height: 140px;
+      }
+    }
+
+    .page-header-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.5));
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 12px 20px;
+    }
+
+    .page-header-inner {
+      text-align: center;
+      color: #f5f5f5;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    }
+
+    .page-header-title {
+      font-size: 20px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .page-header-subtitle {
+      font-size: 12px;
+      margin-top: 2px;
+      opacity: 0.9;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top left, #4f46e5, #111827);
-      color: #f9fafb;
+      box-shadow: 0 6px 10px rgba(15, 23, 42, 0.28);
     }
-    .card {
-      background: rgba(15, 23, 42, 0.9);
-      padding: 2.5rem 3rem;
-      border-radius: 1.25rem;
-      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.6);
-      text-align: center;
-      max-width: 420px;
+
+    .brand-mark-inner {
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
     }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.75rem;
+
+    .brand-text h1 {
+      font-size: 16px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin: 0 0 2px;
+      color: var(--text-main);
     }
-    p {
-      margin: 0.25rem 0;
-      opacity: 0.9;
+
+    .brand-text p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-soft);
     }
-    .badge {
+
+    .tag {
+      align-self: flex-start;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.05em;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      color: var(--text-soft);
+      font-size: 11px;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      padding: 0.35rem 0.75rem;
-      border-radius: 999px;
-      background: rgba(148, 163, 184, 0.15);
-      color: #e5e7eb;
-      margin-bottom: 1.25rem;
     }
-    .dot {
-      width: 8px;
-      height: 8px;
+
+    .tag-dot {
+      width: 7px;
+      height: 7px;
       border-radius: 999px;
       background: #22c55e;
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.35);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
     }
-    .domain {
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 22px;
+    }
+
+    @media (max-width: 799px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .hero-title {
+      font-size: 22px;
+      line-height: 1.25;
+      margin: 0 0 10px;
+    }
+
+    .hero-title strong {
+      color: var(--accent);
+    }
+
+    .hero-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 0 16px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-soft);
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      padding: 4px 9px;
+      border-radius: var(--radius-pill);
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip-label {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 10px;
+      color: var(--text-soft);
+    }
+
+    .chip-value {
+      font-size: 12px;
+      color: var(--text-main);
+    }
+
+    .chip-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .portfolio {
+      border-radius: 10px;
+      border: 1px solid #e5e5e5;
+      padding: 14px 14px 12px;
+      background: #ffffff;
+      margin-top: 4px;
+    }
+
+    .portfolio-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .portfolio-header h2 {
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin: 0;
+    }
+
+    .portfolio-count {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .project-card {
+      border-radius: 8px;
+      padding: 10px 9px 10px;
+      background: #f9fafb;
+      border: 1px solid #e5e5e5;
+      margin-top: 4px;
+    }
+
+    .project-label {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+    }
+
+    .project-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .project-title-main {
+      font-size: 16px;
       font-weight: 600;
-      color: #a5b4fc;
+      color: var(--text-main);
+    }
+
+    .project-status {
+      border-radius: var(--radius-pill);
+      padding: 3px 8px;
+      font-size: 11px;
+      border: 1px solid rgba(148, 27, 27, 0.6);
+      background: #fff1f2;
+      color: var(--accent-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .project-body {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .project-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .project-tag {
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      color: var(--text-main);
+    }
+
+    .project-note {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .side-panel {
+      border-radius: 10px;
+      border: 1px solid #e5e5e5;
+      padding: 12px 14px 10px;
+      background: #ffffff;
+    }
+
+    .side-section-title {
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin: 0 0 8px;
+    }
+
+    .side-body {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .side-body strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .side-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .side-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .side-bullet {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      margin-top: 6px;
+      background: var(--text-soft);
+    }
+
+    .page-footer {
+      padding-top: 12px;
+      margin-top: 16px;
+      border-top: 1px solid #e5e5e5;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    @media (min-width: 640px) {
+      .page-footer {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .footer-left {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .footer-right {
+      opacity: 0.9;
     }
   </style>
 </head>
+
 <body>
-  <main class="card">
-    <div class="badge">
-      <span class="dot"></span>
-      <span>Deployed on Railway</span>
-    </div>
-    <h1>Hello from Twiqit 👋</h1>
-    <p>Your static site is live at</p>
-    <p class="domain">twiqit.com</p>
-  </main>
+  <div class="page">
+    <header class="page-header">
+      <div class="page-header-overlay">
+        <div class="page-header-inner">
+          <div class="page-header-title">Twiqit Lab</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="hero">
+
+        <p class="hero-subtitle">
+          Twiqit Lab is a product studio focused on turning sharp, simple concepts into real businesses with design, technology, and operations powered by AI
+        </p>
+        <div class="hero-meta">
+          <div class="chip">
+            <span class="chip-dot"></span>
+            <span class="chip-label">Focus</span>
+            <span class="chip-value">Few projects, long horizon</span>
+          </div>
+          <div class="chip">
+            <span class="chip-label">Based in</span>
+            <span class="chip-value">Twiqit Labs · Desert Bay, LLC</span>
+          </div>
+        </div>
+
+        <section class="portfolio" aria-label="Twiqit Labs portfolio">
+          <div class="portfolio-header">
+            <h2>Portfolio</h2>
+            <span class="portfolio-count">1 / Many</span>
+          </div>
+
+          <article class="project-card">
+            <div class="project-label">01 · Buy on Chance</div>
+            <div class="project-title">
+              <div class="project-title-main">Buy on Chance e‑commerce platform</div>
+              <div class="project-status">In design &amp; prototyping</div>
+            </div>
+            <p class="project-body">
+              A <strong>“buy on chance” e‑commerce platform</strong> that blends fixed‑price shopping
+              with probabilistic purchasing. Customers decide how much certainty they want;
+              merchants get a new demand channel instead of just another discount bin.
+            </p>
+            <div class="project-tags">
+              <span class="project-tag">Business · New margin structure</span>
+              <span class="project-tag">Design · Playful, non‑gambling flows</span>
+              <span class="project-tag">Tech · Event‑driven pricing engine</span>
+            </div>
+            <p class="project-note">
+              Business, design, and technical concepts for Buy on Chance are captured within the lab’s internal
+              documentation and prototypes.
+            </p>
+          </article>
+        </section>
+      </section>
+
+      <aside class="side-panel" aria-label="About Desert Bay, LLC">
+        <h3 class="side-section-title">Operated by Desert Bay, LLC</h3>
+        <p class="side-body">
+          <strong>Desert Bay, LLC</strong> is the company behind Twiqit Labs. We design, build,
+          and operate a small portfolio of internet businesses—quietly, deliberately, and with
+          a long‑term mindset.
+        </p>
+        <h3 class="side-section-title">How we work</h3>
+        <ul class="side-list">
+          <li>
+            <span class="side-bullet"></span>
+            <span><strong>Few bets at a time</strong> · A compact portfolio with room to think and iterate.</span>
+          </li>
+          <li>
+            <span class="side-bullet"></span>
+            <span><strong>From sketch to system</strong> · Ideas move from notes and mocks into working software.</span>
+          </li>
+          <li>
+            <span class="side-bullet"></span>
+            <span><strong>Quietly compounding</strong> · Preference for durable, useful products over hype.</span>
+          </li>
+        </ul>
+      </aside>
+    </main>
+
+    <footer class="page-footer">
+      <div class="footer-left">
+        <span>Twiqit Labs</span>
+        <span>·</span>
+        <span>Operated by Desert Bay, LLC</span>
+      </div>
+      <div class="footer-right">
+        Future projects from the lab will appear here as they move beyond exploration.
+      </div>
+    </footer>
+  </div>
 </body>
 </html>
