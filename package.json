@@ -1,7 +1,7 @@
 {
-    "name": "twiqit-hello-railway",
+    "name": "twiqit.com",
     "version": "1.0.0",
-    "description": "Simple Hello World static site served via Node on Railway",
+    "description": "Twiqit website — product studio portfolio",
     "main": "index.js",
     "scripts": {
       "start": "node index.js"
