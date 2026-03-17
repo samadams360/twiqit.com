@@ -116,11 +116,11 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
   - **Checkpoint:** Visiting `twiqit.com/buy`, clicking "Watch Ad" earns 100 Twiqs and the updated balance is shown. Clicking again within 24h shows the cooldown message.
 
-- [ ] 7. Slice 7 — Bidding
-  - [ ] 7.1 Extend `Data_Access_Service` — bid_entries table
+- [x] 7. Slice 7 — Bidding
+  - [x] 7.1 Extend `Data_Access_Service` — bid_entries table
     - Implement `createBidEntry`, `getBidEntriesByRaffleId`
     - _Requirements: 3.1, 3.2_
-  - [ ] 7.2 Implement raffle bidding endpoint
+  - [x] 7.2 Implement raffle bidding endpoint
     - `POST /buy/api/raffle/:id/bid` — deduct Twiqs via Twiq_Service, record BidEntry via DAS
     - HTTP 422 on insufficient balance; HTTP 409 if raffle not active
     - After each bid, check if `totalTwiqsBid >= maxTwiqThreshold`; if so, close raffle and trigger winner selection
@@ -134,7 +134,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
   - [ ]* 7.5 Write property test for max threshold close
     - **Property 11: Max threshold triggers immediate close**
     - **Validates: Requirements 5.1**
-  - [ ] 7.6 Add bid submission UI to React homepage
+  - [x] 7.6 Add bid submission UI to React homepage
     - Bid amount input + "Place Bid" button on the active drop card
     - Show inline success feedback (updated balance) or error message (insufficient balance, inactive raffle)
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
