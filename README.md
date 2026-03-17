@@ -1,5 +1,5 @@
 # Twiqit Hello World on Railway
-Simple static "Hello World" site for `twiqit.com`, served via Node/Express on Railway.
+Twiqit.com site served via Node/Express on Railway, also powered with Cursor and Kiro
 ## Run locally
 ```bash
 npm install
