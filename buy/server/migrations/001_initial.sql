@@ -41,7 +41,7 @@ VALUES (
   gen_random_uuid(),
   'Sony WH-1000XM5 Headphones',
   'Industry-leading noise cancellation with up to 30-hour battery life and crystal-clear hands-free calling.',
-  'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600',
+  '/images/drop-headphones.jpg',
   39999
 )
 ON CONFLICT DO NOTHING;
