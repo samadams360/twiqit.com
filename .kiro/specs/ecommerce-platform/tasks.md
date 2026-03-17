@@ -143,15 +143,15 @@ Vertical-slice implementation: each slice delivers something visible and testabl
 - [ ] 8. Slice 8 Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Slice 9 — Raffle Expiration and Winner Selection
-  - [ ] 9.1 Implement `Winner_Selector` module
+- [-] 9. Slice 9 — Raffle Expiration and Winner Selection
+  - [x] 9.1 Implement `Winner_Selector` module
     - `selectWinner(bidEntries: BidEntry[]): BidEntry` using a cryptographically seeded random index
     - Export as an interface + default implementation so the dependency can be swapped
     - _Requirements: 6.1, 6.2_
   - [ ]* 9.2 Write property test for winner validity
     - **Property 14: Winner is always a valid bid entry**
     - **Validates: Requirements 6.1, 6.3**
-  - [ ] 9.3 Implement `Notification_Service` with pluggable email provider
+  - [x] 9.3 Implement `Notification_Service` with pluggable email provider
     - `sendWinnerNotification(user, raffle)`
     - `sendCashoutFailure(user, reason)`
     - `sendAdCooldownNotice(user, eligibleAt)`
@@ -160,7 +160,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
   - [ ]* 9.4 Write unit tests for Notification_Service
     - Test each method dispatches to the email provider with the correct payload
     - _Requirements: 7.1_
-  - [ ] 9.5 Implement raffle expiration scheduler
+  - [x] 9.5 Implement raffle expiration scheduler
     - Background job polling for raffles where `expiresAt` has passed and status is `active`
     - If `totalTwiqsBid >= minTwiqThreshold`: close raffle, invoke `Winner_Selector`, record winner, call `sendWinnerNotification`
     - If `totalTwiqsBid < minTwiqThreshold`: set status to `no_winner`, call `sendAdminRaffleUnderThreshold`

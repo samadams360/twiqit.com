@@ -58,4 +58,7 @@ app.get("/", (req, res) => {
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
+  // Start raffle expiration scheduler
+  const raffleScheduler = require("./buy/server/raffleScheduler");
+  raffleScheduler.start();
 });
