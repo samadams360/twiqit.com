@@ -4,9 +4,8 @@
  * - All queries are parameterized (no string interpolation)
  * - Every operation appends an audit log entry
  * - PII encryption handled here (email, bankAccountInfo) — added in Slice 10
- *
- * Slice 2 scope: raffles + drops tables only.
  */
+const { v4: uuidv4 } = require('uuid');
 const pool = require('./db');
 
 // ---------------------------------------------------------------------------
@@ -35,14 +34,15 @@ async function getDropById(id, caller = 'unknown') {
   );
   const row = rows[0] ?? null;
   audit('read', 'drops', id, caller, !!row);
-  return row;
+  return row ? rowToDrop(row) : null;
 }
 
 // ---------------------------------------------------------------------------
 // Raffles
 // ---------------------------------------------------------------------------
 async function createRaffle(data, caller = 'unknown') {
-  const { id, dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt } = data;
+  const id = data.id || uuidv4();
+  const { dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt } = data;
   const { rows } = await pool.query(
     `INSERT INTO raffles
        (id, drop_id, status, min_twiq_threshold, max_twiq_threshold, expires_at,
@@ -97,28 +97,39 @@ async function updateRaffle(id, data, caller = 'unknown') {
   const values = [];
   let i = 1;
 
-  if (data.status !== undefined)           { fields.push(`status = $${i++}`);              values.push(data.status); }
-  if (data.minTwiqThreshold !== undefined) { fields.push(`min_twiq_threshold = $${i++}`);  values.push(data.minTwiqThreshold); }
-  if (data.maxTwiqThreshold !== undefined) { fields.push(`max_twiq_threshold = $${i++}`);  values.push(data.maxTwiqThreshold); }
-  if (data.expiresAt !== undefined)        { fields.push(`expires_at = $${i++}`);           values.push(data.expiresAt); }
-  if (data.totalTwiqsBid !== undefined)    { fields.push(`total_twiqs_bid = $${i++}`);      values.push(data.totalTwiqsBid); }
-  if (data.winnerId !== undefined)         { fields.push(`winner_id = $${i++}`);            values.push(data.winnerId); }
-  if (data.winningBidId !== undefined)     { fields.push(`winning_bid_id = $${i++}`);       values.push(data.winningBidId); }
-  if (data.closedAt !== undefined)         { fields.push(`closed_at = $${i++}`);            values.push(data.closedAt); }
+  if (data.status !== undefined)           { fields.push('status = $' + i++);              values.push(data.status); }
+  if (data.minTwiqThreshold !== undefined) { fields.push('min_twiq_threshold = $' + i++);  values.push(data.minTwiqThreshold); }
+  if (data.maxTwiqThreshold !== undefined) { fields.push('max_twiq_threshold = $' + i++);  values.push(data.maxTwiqThreshold); }
+  if (data.expiresAt !== undefined)        { fields.push('expires_at = $' + i++);           values.push(data.expiresAt); }
+  if (data.totalTwiqsBid !== undefined)    { fields.push('total_twiqs_bid = $' + i++);      values.push(data.totalTwiqsBid); }
+  if (data.winnerId !== undefined)         { fields.push('winner_id = $' + i++);            values.push(data.winnerId); }
+  if (data.winningBidId !== undefined)     { fields.push('winning_bid_id = $' + i++);       values.push(data.winningBidId); }
+  if (data.closedAt !== undefined)         { fields.push('closed_at = $' + i++);            values.push(data.closedAt); }
 
   if (fields.length === 0) return getRaffleById(id, caller);
 
   values.push(id);
   const { rows } = await pool.query(
-    `UPDATE raffles SET ${fields.join(', ')} WHERE id = $${i} RETURNING *`,
+    'UPDATE raffles SET ' + fields.join(', ') + ' WHERE id = $' + i + ' RETURNING *',
     values
   );
   audit('write', 'raffles', id, caller, true);
   return rowToRaffle(rows[0]);
 }
 
+// Close all currently active raffles (used during replace)
+async function closeActiveRaffles(caller = 'unknown') {
+  const { rows } = await pool.query(
+    `UPDATE raffles SET status = 'closed', closed_at = NOW()
+     WHERE status = 'active'
+     RETURNING id`
+  );
+  rows.forEach(r => audit('write', 'raffles', r.id, caller, true));
+  return rows.map(r => r.id);
+}
+
 // ---------------------------------------------------------------------------
-// Row mapper
+// Row mappers
 // ---------------------------------------------------------------------------
 function rowToRaffle(row) {
   return {
@@ -136,10 +147,22 @@ function rowToRaffle(row) {
   };
 }
 
+function rowToDrop(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    imageUrl: row.image_url,
+    retailValue: row.retail_value,
+    createdAt: row.created_at,
+  };
+}
+
 module.exports = {
   getDropById,
   createRaffle,
   getActiveRaffle,
   getRaffleById,
   updateRaffle,
+  closeActiveRaffles,
 };

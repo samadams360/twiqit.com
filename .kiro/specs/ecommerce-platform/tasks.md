@@ -43,8 +43,8 @@ Vertical-slice implementation: each slice delivers something visible and testabl
   - **Checkpoint:** When an active raffle exists in the DB, the homepage shows the drop details. When none exists, the empty state is shown.
   - _Note: PostgreSQL must be running with `DATABASE_URL` set in `.env`. Migration: `buy/server/migrations/001_initial.sql`._
 
-- [ ] 3. Slice 3 — Admin Raffle Management
-  - [ ] 3.1 Implement admin raffle management endpoints
+- [x] 3. Slice 3 — Admin Raffle Management
+  - [x] 3.1 Implement admin raffle management endpoints
     - `POST /buy/api/admin/raffle` — create raffle; require `minTwiqThreshold`, `maxTwiqThreshold`, `expiresAt`; HTTP 400 if missing
     - `PUT /buy/api/admin/raffle/:id` — update active raffle; preserve all existing bid entries
     - `POST /buy/api/admin/raffle/:id/replace` — close current raffle (status → `closed`), create new active raffle
