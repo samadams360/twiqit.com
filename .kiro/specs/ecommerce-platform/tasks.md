@@ -97,7 +97,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - Wrap balance update + transaction insert in a single PostgreSQL transaction
     - _Requirements: 2.1, 2.2, 2.3_
   - [x] 6.2 Implement `Twiq_Service`
-    - `POST /buy/api/twiqs/watch-ad` — credit 100 Twiqs if last watch > 24h ago; HTTP 429 with eligible-at time otherwise
+    - `POST /buy/api/twiqs/watch-ad` — credit 100 Twiqs if last watch > 30 min ago; HTTP 429 with eligible-at time otherwise
     - `GET /buy/api/twiqs/balance` — return current balance
     - `POST /buy/api/twiqs/cashout` — deduct balance, initiate bank transfer; on failure roll back and notify user
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_

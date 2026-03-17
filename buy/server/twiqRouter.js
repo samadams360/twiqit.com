@@ -12,7 +12,7 @@ const { optionalAuth } = require('./authMiddleware');
 
 const router = express.Router();
 const AD_WATCH_AMOUNT = 100;
-const AD_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const AD_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 
 function log(severity, op, extra = {}) {
   console.log(JSON.stringify({ ts: new Date().toISOString(), service: 'twiq_service', severity, op, ...extra }));
