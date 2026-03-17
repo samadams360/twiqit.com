@@ -88,6 +88,28 @@
     .btn-signin:hover { background: #253d35; }
     .btn-signin:disabled { opacity: 0.45; cursor: not-allowed; }
     .signin-error { font-size: 13px; color: #dc2626; margin-top: 10px; }
+    .bid-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+    .bid-input {
+      flex: 1; padding: 9px 12px; border-radius: 8px;
+      border: 1px solid #cbd5e1; font-size: 15px; outline: none;
+      text-align: center;
+    }
+    .bid-input:focus { border-color: #304d44; }
+    .btn-bid {
+      padding: 9px 20px; border-radius: 8px; border: none; cursor: pointer;
+      background: #304d44; color: #fff; font-size: 13px; font-weight: 600;
+      letter-spacing: 0.04em; white-space: nowrap; transition: opacity 0.15s;
+    }
+    .btn-bid:hover { opacity: 0.85; }
+    .btn-bid:disabled { opacity: 0.4; cursor: not-allowed; }
+    .bid-feedback { font-size: 13px; margin-top: 8px; }
+    .bid-feedback.success { color: #16a34a; }
+    .bid-feedback.error   { color: #dc2626; }
+    .raffle-closed-badge {
+      display: inline-block; padding: 4px 10px; border-radius: 20px;
+      background: #f1f5f9; color: #64748b; font-size: 11px;
+      letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px;
+    }
     .back-link {
       display: inline-block; margin-top: 20px;
       font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
@@ -138,7 +160,7 @@
     }
 
     // ---- Balance bar ----
-    function BalanceBar({ user }) {
+    function BalanceBar({ user, externalBalance }) {
       const [balance, setBalance] = useState(null);
       const [cooldown, setCooldown] = useState(null); // ISO string of eligibleAt
       const [remaining, setRemaining] = useState(null);
@@ -151,6 +173,13 @@
           .then(d => setBalance(d.balance ?? 0))
           .catch(() => setBalance(0));
       }, [user]);
+
+      // Sync balance when a bid is placed externally
+      useEffect(() => {
+        if (externalBalance !== null && externalBalance !== undefined) {
+          setBalance(externalBalance);
+        }
+      }, [externalBalance]);
 
       // Tick the countdown every second
       useEffect(() => {
@@ -265,7 +294,39 @@
     }
 
     // ---- Drop display ----
-    function DropCard({ drop, raffle }) {
+    function DropCard({ drop, raffle, user, onBidSuccess }) {
+      const [bidAmount, setBidAmount] = useState('');
+      const [bidding, setBidding] = useState(false);
+      const [feedback, setFeedback] = useState(null); // { type: 'success'|'error', msg }
+
+      const isActive = raffle.status === 'active';
+
+      async function placeBid(e) {
+        e.preventDefault();
+        const amount = parseInt(bidAmount, 10);
+        if (!amount || amount <= 0) return;
+        setBidding(true); setFeedback(null);
+        try {
+          const r = await fetch(`/buy/api/raffle/${raffle.id}/bid`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, amount }),
+          });
+          const data = await r.json();
+          if (!r.ok) {
+            const msg = data?.error?.message || 'Something went wrong.';
+            setFeedback({ type: 'error', msg });
+          } else {
+            setFeedback({ type: 'success', msg: `Bid placed! New balance: ${data.balance} Twiqs` });
+            setBidAmount('');
+            onBidSuccess(data.balance);
+          }
+        } catch {
+          setFeedback({ type: 'error', msg: 'Connection error. Try again.' });
+        }
+        setBidding(false);
+      }
+
       return (
         <>
           {drop.imageUrl && <img className="drop-image" src={drop.imageUrl} alt={drop.name} />}
@@ -277,6 +338,29 @@
               <div><strong>{formatCurrency(drop.retailValue)}</strong>Retail Value</div>
               <div><strong>{formatExpiry(raffle.expiresAt)}</strong>Raffle Closes</div>
             </div>
+            {isActive ? (
+              <form onSubmit={placeBid}>
+                <div className="bid-row">
+                  <input
+                    className="bid-input"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="Twiqs to bid"
+                    value={bidAmount}
+                    onChange={e => setBidAmount(e.target.value)}
+                  />
+                  <button className="btn-bid" type="submit" disabled={bidding || !bidAmount}>
+                    {bidding ? 'Placing…' : 'Place Bid'}
+                  </button>
+                </div>
+                {feedback && (
+                  <p className={`bid-feedback ${feedback.type}`}>{feedback.msg}</p>
+                )}
+              </form>
+            ) : (
+              <span className="raffle-closed-badge">Raffle Closed</span>
+            )}
           </div>
         </>
       );
@@ -296,6 +380,7 @@
     function App() {
       const [user, setUser] = useState(getSavedUser);
       const [drop, setDrop] = useState({ status: 'loading', data: null });
+      const [bidBalance, setBidBalance] = useState(null);
 
       useEffect(() => {
         fetch('/buy/api/raffle/active')
@@ -318,8 +403,15 @@
       return (
         <>
           <Header user={user} onSignOut={handleSignOut} />
-          <BalanceBar user={user} />
-          {drop.data ? <DropCard drop={drop.data.drop} raffle={drop.data.raffle} /> : <EmptyState />}
+          <BalanceBar user={user} externalBalance={bidBalance} />
+          {drop.data
+            ? <DropCard
+                drop={drop.data.drop}
+                raffle={drop.data.raffle}
+                user={user}
+                onBidSuccess={bal => setBidBalance(bal)}
+              />
+            : <EmptyState />}
         </>
       );
     }

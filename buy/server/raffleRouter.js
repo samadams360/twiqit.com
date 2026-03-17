@@ -177,6 +177,60 @@ router.post('/admin/raffle/:id/replace', requireAuth, async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /buy/api/raffle/:id/bid — place a bid (deduct Twiqs, record entry)
+// Body: { userId, amount }
+// ---------------------------------------------------------------------------
+router.post('/raffle/:id/bid', async (req, res) => {
+  const { id } = req.params;
+  const { userId, amount } = req.body ?? {};
+
+  if (!userId || !amount) {
+    return errResponse(res, 400, 'MISSING_FIELDS', 'userId and amount are required.');
+  }
+  if (!Number.isInteger(amount) || amount <= 0) {
+    return errResponse(res, 400, 'INVALID_AMOUNT', 'amount must be a positive integer.');
+  }
+
+  try {
+    // 1. Verify raffle is active
+    const raffle = await das.getRaffleById(id, 'raffle_service');
+    if (!raffle) return errResponse(res, 404, 'NOT_FOUND', 'Raffle not found.');
+    if (raffle.status !== 'active') {
+      return errResponse(res, 409, 'RAFFLE_NOT_ACTIVE', 'This raffle is no longer accepting bids.');
+    }
+
+    // 2. Check balance
+    const balance = await das.getTwiqBalance(userId, 'raffle_service');
+    if (balance < amount) {
+      return res.status(422).json({ error: { code: 'INSUFFICIENT_BALANCE', message: 'Not enough Twiqs.', balance } });
+    }
+
+    // 3. Deduct Twiqs
+    await das.createTwiqTransaction({ userId, type: 'bid', amount: -amount }, 'raffle_service');
+
+    // 4. Record bid entry
+    const entry = await das.createBidEntry({ raffleId: id, userId, amount }, 'raffle_service');
+
+    // 5. Update raffle total
+    const newTotal = raffle.totalTwiqsBid + amount;
+    let updatedRaffle = await das.updateRaffle(id, { totalTwiqsBid: newTotal }, 'raffle_service');
+
+    // 6. Auto-close if max threshold reached
+    if (newTotal >= raffle.maxTwiqThreshold) {
+      updatedRaffle = await das.updateRaffle(id, { status: 'closed', closedAt: new Date() }, 'raffle_service');
+      log('info', 'raffle_max_threshold_reached', { raffleId: id, totalTwiqsBid: newTotal });
+    }
+
+    const newBalance = await das.getTwiqBalance(userId, 'raffle_service');
+    log('info', 'bid_placed', { raffleId: id, userId, amount, newTotal, newBalance });
+    res.status(201).json({ bidEntryId: entry.id, balance: newBalance, raffle: updatedRaffle });
+  } catch (err) {
+    log('error', 'place_bid', { message: err.message });
+    errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /buy/api/admin/drops — list all drops (for admin UI drop selector)
 // ---------------------------------------------------------------------------
 router.get('/admin/drops', requireAuth, async (req, res) => {

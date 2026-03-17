@@ -131,6 +131,30 @@ async function createTwiqTransaction(data, caller = 'unknown') {
 }
 
 // ---------------------------------------------------------------------------
+// Bid Entries
+// ---------------------------------------------------------------------------
+async function createBidEntry(data, caller = 'unknown') {
+  const id = uuidv4();
+  const { raffleId, userId, amount } = data;
+  const { rows } = await pool.query(
+    `INSERT INTO bid_entries (id, raffle_id, user_id, amount)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
+    [id, raffleId, userId, amount]
+  );
+  audit('write', 'bid_entries', id, caller, true);
+  return rowToBidEntry(rows[0]);
+}
+
+async function getBidEntriesByRaffleId(raffleId, caller = 'unknown') {
+  const { rows } = await pool.query(
+    'SELECT * FROM bid_entries WHERE raffle_id = $1 ORDER BY created_at ASC',
+    [raffleId]
+  );
+  audit('read', 'bid_entries', raffleId, caller, true);
+  return rows.map(rowToBidEntry);
+}
+
+// ---------------------------------------------------------------------------
 // Drops
 // ---------------------------------------------------------------------------
 async function getDropById(id, caller = 'unknown') {
@@ -281,6 +305,16 @@ function rowToRaffle(row) {
   };
 }
 
+function rowToBidEntry(row) {
+  return {
+    id: row.id,
+    raffleId: row.raffle_id,
+    userId: row.user_id,
+    amount: row.amount,
+    createdAt: row.created_at,
+  };
+}
+
 function rowToDrop(row) {
   return {
     id: row.id,
@@ -300,6 +334,8 @@ module.exports = {
   getTwiqBalance,
   getLastAdWatchTime,
   createTwiqTransaction,
+  createBidEntry,
+  getBidEntriesByRaffleId,
   getDropById,
   listDrops,
   createRaffle,
