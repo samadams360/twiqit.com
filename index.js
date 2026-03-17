@@ -1,21 +1,44 @@
+﻿require('dotenv').config();
 const express = require("express");
 const path = require("path");
 const app = express();
 app.set('trust proxy', true);
+app.use(express.json());
 const port = process.env.PORT || 3000;
-// Sam page and assets — match /Sam and /Sam/ case-insensitively so localhost and proxies work
+
+// Sam page and assets
 const samDir = path.join(__dirname, "public", "Company", "Sam");
 const sendSamIndex = (req, res) => res.sendFile(path.join(samDir, "index.html"));
 app.get(/^\/Sam\/?$/i, sendSamIndex);
 app.use("/Sam", express.static(samDir));
 app.use("/sam", express.static(samDir));
 app.use("/Company/Sam", express.static(samDir));
-// Serve static files from the "public" folder
+
+// /commerce -> /buy (301 redirect)
+app.get("/commerce", (req, res) => res.redirect(301, "/buy"));
+app.get("/commerce/*", (req, res) =>
+  res.redirect(301, "/buy" + req.path.replace(/^\/commerce/, ""))
+);
+
+// /buy API routes (must come before static so /buy/api/* hits the router)
+const raffleRouter = require("./buy/server/raffleRouter");
+app.use("/buy/api", raffleRouter);
+
+// /buy SPA static + catch-all
+const buyDir = path.join(__dirname, "public", "buy");
+app.use("/buy", express.static(buyDir));
+app.get(/^\/buy(\/.*)?$/, (req, res) =>
+  res.sendFile(path.join(buyDir, "index.html"))
+);
+
+// Main site static files
 app.use(express.static(path.join(__dirname, "public")));
-// Fallback to index.html for root path
+
+// Root fallback
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-app.listen(port, "0.0.0.0",() => {
+
+app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
 });
