@@ -5,10 +5,10 @@ app.set('trust proxy', true);
 const port = process.env.PORT || 3000;
 // Serve static files from the "public" folder
 app.use(express.static(path.join(__dirname, "public")));
-// Sam page at twiqit.com/Sam (and /Sam/)
+// Sam page at twiqit.com/Sam (and /Sam/) — redirect /Sam to /Sam/ so relative image paths resolve correctly on all clients
 const samDir = path.join(__dirname, "public", "Company", "Sam");
 app.get("/Sam", (req, res) => {
-  res.sendFile(path.join(samDir, "index.html"));
+  res.redirect(301, "/Sam/");
 });
 app.get("/Sam/", (req, res) => {
   res.sendFile(path.join(samDir, "index.html"));
