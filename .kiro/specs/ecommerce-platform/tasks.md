@@ -91,12 +91,12 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - **Files:** `public/buy/index.html`
   - **Checkpoint:** Entering the `ADMIN_TOKEN` in the UI signs the user in and shows their name. Admin endpoints return 403 without the token. `GET /buy/api/auth/me` returns the user when authenticated.
 
-- [ ] 6. Slice 6 — Twiq Earning
-  - [ ] 6.1 Extend `Data_Access_Service` — twiq_transactions table
+- [x] 6. Slice 6 — Twiq Earning
+  - [x] 6.1 Extend `Data_Access_Service` — twiq_transactions table
     - Implement `getTwiqBalance`, `createTwiqTransaction`, `getLastAdWatchTime`
     - Wrap balance update + transaction insert in a single PostgreSQL transaction
     - _Requirements: 2.1, 2.2, 2.3_
-  - [ ] 6.2 Implement `Twiq_Service`
+  - [x] 6.2 Implement `Twiq_Service`
     - `POST /buy/api/twiqs/watch-ad` — credit 100 Twiqs if last watch > 24h ago; HTTP 429 with eligible-at time otherwise
     - `GET /buy/api/twiqs/balance` — return current balance
     - `POST /buy/api/twiqs/cashout` — deduct balance, initiate bank transfer; on failure roll back and notify user
@@ -110,7 +110,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
   - [ ]* 6.5 Write property test for cashout balance invariant
     - **Property 4: Cashout balance invariant**
     - **Validates: Requirements 2.6, 2.7**
-  - [ ] 6.6 Add Twiq balance display and "Watch Ad" UI to React homepage
+  - [x] 6.6 Add Twiq balance display and "Watch Ad" UI to React homepage
     - Show current Twiq balance on the homepage
     - "Watch Ad" button; on success increment displayed balance; on cooldown show time remaining
     - _Requirements: 2.1, 2.2, 2.3, 2.4_

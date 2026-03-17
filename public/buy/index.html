@@ -36,6 +36,23 @@
       border-radius: 6px; padding: 4px 10px; cursor: pointer;
     }
     .btn-sign-out:hover { color: #fff; border-color: rgba(255,255,255,0.5); }
+    /* Twiq balance bar */
+    .balance-bar {
+      width: 100%; max-width: 520px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,0.08); border-radius: 10px;
+      padding: 10px 16px; margin-bottom: 16px;
+    }
+    .balance-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+    .balance-amount { font-size: 18px; font-weight: 700; color: #fff; }
+    .btn-watch-ad {
+      padding: 7px 16px; border-radius: 7px; border: none; cursor: pointer;
+      background: #933333; color: #fff; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; transition: opacity 0.15s;
+    }
+    .btn-watch-ad:hover { opacity: 0.85; }
+    .btn-watch-ad:disabled { opacity: 0.4; cursor: not-allowed; }
+    .cooldown-msg { font-size: 11px; color: rgba(255,255,255,0.5); text-align: right; margin-top: 4px; }
     .card {
       background: #fff; border-radius: 14px;
       box-shadow: 0 18px 40px rgba(0,0,0,0.45);
@@ -89,6 +106,8 @@
     <div class="header-right" id="header-right"></div>
   </div>
 
+  <div id="balance-bar-root"></div>
+
   <div class="card" id="card">
     <div class="loading">Loading…</div>
   </div>
@@ -116,6 +135,65 @@
         month: 'short', day: 'numeric', year: 'numeric',
         hour: '2-digit', minute: '2-digit'
       });
+    }
+
+    // ---- Balance bar ----
+    function BalanceBar({ user }) {
+      const [balance, setBalance] = useState(null);
+      const [cooldown, setCooldown] = useState(null); // ISO string of eligibleAt
+      const [watching, setWatching] = useState(false);
+
+      useEffect(() => {
+        if (!user) return;
+        fetch(`/buy/api/twiqs/balance?userId=${user.id}`)
+          .then(r => r.json())
+          .then(d => setBalance(d.balance ?? 0))
+          .catch(() => setBalance(0));
+      }, [user]);
+
+      function timeUntil(isoStr) {
+        const ms = new Date(isoStr) - Date.now();
+        if (ms <= 0) return null;
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        return h > 0 ? `${h}h ${m}m` : `${m}m`;
+      }
+
+      async function watchAd() {
+        setWatching(true);
+        try {
+          const r = await fetch('/buy/api/twiqs/watch-ad', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          const data = await r.json();
+          if (r.status === 429) { setCooldown(data.error.eligibleAt); setWatching(false); return; }
+          if (r.ok) { setBalance(data.balance); setCooldown(null); }
+        } catch { /* ignore */ }
+        setWatching(false);
+      }
+
+      const remaining = cooldown ? timeUntil(cooldown) : null;
+      const onCooldown = !!remaining;
+
+      const el = document.getElementById('balance-bar-root');
+      if (!el || !user || balance === null) return null;
+      return ReactDOM.createPortal(
+        <div className="balance-bar">
+          <div>
+            <div className="balance-label">Your Twiqs</div>
+            <div className="balance-amount">{balance}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <button className="btn-watch-ad" onClick={watchAd} disabled={watching || onCooldown}>
+              {watching ? 'Loading…' : onCooldown ? 'Ad watched' : '▶ Watch Ad +100'}
+            </button>
+            {onCooldown && <div className="cooldown-msg">Next ad in {remaining}</div>}
+          </div>
+        </div>,
+        el
+      );
     }
 
     // ---- Header portal ----
@@ -233,6 +311,7 @@
       return (
         <>
           <Header user={user} onSignOut={handleSignOut} />
+          <BalanceBar user={user} />
           {drop.data ? <DropCard drop={drop.data.drop} raffle={drop.data.raffle} /> : <EmptyState />}
         </>
       );

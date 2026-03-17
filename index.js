@@ -22,7 +22,9 @@ app.get("/commerce/*", (req, res) =>
 
 // /buy API routes (must come before static so /buy/api/* hits the router)
 const raffleRouter = require("./buy/server/raffleRouter");
+const twiqRouter = require("./buy/server/twiqRouter");
 app.use("/buy/api", raffleRouter);
+app.use("/buy/api", twiqRouter);
 
 // Seed default user from ADMIN_TOKEN on startup
 const crypto = require("crypto");

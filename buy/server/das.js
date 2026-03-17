@@ -84,6 +84,53 @@ async function getOrCreateGuestUser(displayName, caller = 'unknown') {
 }
 
 // ---------------------------------------------------------------------------
+// Twiq Transactions
+// ---------------------------------------------------------------------------
+async function getTwiqBalance(userId, caller = 'unknown') {
+  const { rows } = await pool.query(
+    'SELECT COALESCE(SUM(amount), 0)::integer AS balance FROM twiq_transactions WHERE user_id = $1',
+    [userId]
+  );
+  audit('read', 'twiq_transactions', userId, caller, true);
+  return rows[0].balance;
+}
+
+async function getLastAdWatchTime(userId, caller = 'unknown') {
+  const { rows } = await pool.query(
+    `SELECT created_at FROM twiq_transactions
+     WHERE user_id = $1 AND type = 'ad_watch'
+     ORDER BY created_at DESC LIMIT 1`,
+    [userId]
+  );
+  audit('read', 'twiq_transactions', userId, caller, true);
+  return rows[0]?.created_at ?? null;
+}
+
+async function createTwiqTransaction(data, caller = 'unknown') {
+  const { userId, type, amount } = data;
+  const id = uuidv4();
+  // Wrap in a transaction to ensure atomicity
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `INSERT INTO twiq_transactions (id, user_id, type, amount)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [id, userId, type, amount]
+    );
+    await client.query('COMMIT');
+    audit('write', 'twiq_transactions', id, caller, true);
+    return rowToTwiqTransaction(rows[0]);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    audit('write', 'twiq_transactions', id, caller, false);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Drops
 // ---------------------------------------------------------------------------
 async function getDropById(id, caller = 'unknown') {
@@ -198,6 +245,16 @@ async function closeActiveRaffles(caller = 'unknown') {
 // ---------------------------------------------------------------------------
 // Row mappers
 // ---------------------------------------------------------------------------
+function rowToTwiqTransaction(row) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    type: row.type,
+    amount: row.amount,
+    createdAt: row.created_at,
+  };
+}
+
 function rowToUser(row) {
   return {
     id: row.id,
@@ -240,6 +297,9 @@ module.exports = {
   getUserById,
   getUserByToken,
   getOrCreateGuestUser,
+  getTwiqBalance,
+  getLastAdWatchTime,
+  createTwiqTransaction,
   getDropById,
   listDrops,
   createRaffle,
