@@ -31,6 +31,25 @@ function errResponse(res, status, code, message) {
 }
 
 // ---------------------------------------------------------------------------
+// POST /buy/api/auth/guest — sign in with a display name (no password)
+// ---------------------------------------------------------------------------
+router.post('/auth/guest', async (req, res) => {
+  const { displayName } = req.body ?? {};
+  if (!displayName || typeof displayName !== 'string' || !displayName.trim()) {
+    return errResponse(res, 400, 'MISSING_FIELDS', 'displayName is required.');
+  }
+  const name = displayName.trim().slice(0, 32); // cap at 32 chars
+  try {
+    const user = await das.getOrCreateGuestUser(name, 'auth_guest');
+    log('info', 'auth_guest', { userId: user.id, displayName: user.displayName });
+    res.json({ id: user.id, displayName: user.displayName });
+  } catch (err) {
+    log('error', 'auth_guest', { message: err.message });
+    errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /buy/api/auth/me — return current user if authenticated
 // ---------------------------------------------------------------------------
 router.get('/auth/me', async (req, res) => {

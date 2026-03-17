@@ -29,13 +29,13 @@ function audit(op, table, recordId, caller, success) {
 // ---------------------------------------------------------------------------
 async function createUser(data, caller = 'unknown') {
   const id = data.id || uuidv4();
-  const { displayName, tokenHash } = data;
+  const { displayName, tokenHash = null, isGuest = false } = data;
   const { rows } = await pool.query(
-    `INSERT INTO users (id, display_name, token_hash)
-     VALUES ($1, $2, $3)
+    `INSERT INTO users (id, display_name, token_hash, is_guest)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (token_hash) DO NOTHING
      RETURNING *`,
-    [id, displayName, tokenHash]
+    [id, displayName, tokenHash, isGuest]
   );
   audit('write', 'users', id, caller, true);
   return rows[0] ? rowToUser(rows[0]) : null;
@@ -59,6 +59,28 @@ async function getUserByToken(tokenHash, caller = 'unknown') {
   const row = rows[0] ?? null;
   audit('read', 'users', row?.id ?? null, caller, !!row);
   return row ? rowToUser(row) : null;
+}
+
+async function getOrCreateGuestUser(displayName, caller = 'unknown') {
+  // Find existing guest with this display name (case-insensitive)
+  const { rows: existing } = await pool.query(
+    `SELECT * FROM users WHERE LOWER(display_name) = LOWER($1) AND is_guest = true LIMIT 1`,
+    [displayName]
+  );
+  if (existing[0]) {
+    audit('read', 'users', existing[0].id, caller, true);
+    return rowToUser(existing[0]);
+  }
+  // Create new guest user
+  const id = uuidv4();
+  const { rows } = await pool.query(
+    `INSERT INTO users (id, display_name, token_hash, is_guest)
+     VALUES ($1, $2, NULL, true)
+     RETURNING *`,
+    [id, displayName]
+  );
+  audit('write', 'users', id, caller, true);
+  return rowToUser(rows[0]);
 }
 
 // ---------------------------------------------------------------------------
@@ -181,6 +203,7 @@ function rowToUser(row) {
     id: row.id,
     displayName: row.display_name,
     tokenHash: row.token_hash,
+    isGuest: row.is_guest,
     createdAt: row.created_at,
   };
 }
@@ -216,6 +239,7 @@ module.exports = {
   createUser,
   getUserById,
   getUserByToken,
+  getOrCreateGuestUser,
   getDropById,
   listDrops,
   createRaffle,

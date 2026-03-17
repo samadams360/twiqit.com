@@ -36,12 +36,6 @@
       border-radius: 6px; padding: 4px 10px; cursor: pointer;
     }
     .btn-sign-out:hover { color: #fff; border-color: rgba(255,255,255,0.5); }
-    .admin-link {
-      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
-      color: #fca5a5; text-decoration: none;
-      border: 1px solid rgba(252,165,165,0.3); border-radius: 6px; padding: 4px 10px;
-    }
-    .admin-link:hover { background: rgba(252,165,165,0.1); }
     .card {
       background: #fff; border-radius: 14px;
       box-shadow: 0 18px 40px rgba(0,0,0,0.45);
@@ -59,13 +53,14 @@
     .empty-title { font-size: 20px; font-weight: 700; color: #304d44; margin: 0 0 8px; }
     .empty-sub { font-size: 14px; color: #888; margin: 0; }
     .loading { padding: 48px 28px; text-align: center; color: #aaa; font-size: 14px; }
-    /* Sign-in card */
+    /* Username prompt */
     .signin-card { padding: 40px 32px; text-align: center; }
     .signin-title { font-size: 20px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px; }
     .signin-sub { font-size: 14px; color: #888; margin: 0 0 24px; }
     .signin-input {
       width: 100%; padding: 10px 14px; border-radius: 8px;
-      border: 1px solid #cbd5e1; font-size: 14px; margin-bottom: 12px; outline: none;
+      border: 1px solid #cbd5e1; font-size: 15px; margin-bottom: 12px; outline: none;
+      text-align: center;
     }
     .signin-input:focus { border-color: #304d44; }
     .btn-signin {
@@ -74,6 +69,7 @@
       cursor: pointer; letter-spacing: 0.04em;
     }
     .btn-signin:hover { background: #253d35; }
+    .btn-signin:disabled { opacity: 0.45; cursor: not-allowed; }
     .signin-error { font-size: 13px; color: #dc2626; margin-top: 10px; }
     .back-link {
       display: inline-block; margin-top: 20px;
@@ -106,76 +102,76 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    const TOKEN_KEY = 'twiqit_token';
+    const USER_KEY = 'twiqit_user';
 
-    function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
-    function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
-    function clearToken() { localStorage.removeItem(TOKEN_KEY); }
-
-    function authHeaders() {
-      const t = getToken();
-      return t ? { 'Authorization': 'Bearer ' + t } : {};
+    function getSavedUser() {
+      try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; }
     }
+    function saveUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)); }
+    function clearUser() { localStorage.removeItem(USER_KEY); }
 
     function formatCurrency(cents) { return '$' + (cents / 100).toFixed(2); }
     function formatExpiry(dateStr) {
       return new Date(dateStr).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
       });
     }
 
-    // ---- Header ----
+    // ---- Header portal ----
     function Header({ user, onSignOut }) {
-      const headerRight = document.getElementById('header-right');
-      if (!headerRight) return null;
+      const el = document.getElementById('header-right');
+      if (!el || !user) return null;
       return ReactDOM.createPortal(
-        user ? (
-          <>
-            {user.isAdmin && <a className="admin-link" href="/buy/admin">Admin</a>}
-            <span className="user-name">{user.displayName}</span>
-            <button className="btn-sign-out" onClick={onSignOut}>Sign out</button>
-          </>
-        ) : null,
-        headerRight
+        <>
+          <span className="user-name">{user.displayName}</span>
+          <button className="btn-sign-out" onClick={onSignOut}>Change</button>
+        </>,
+        el
       );
     }
 
-    // ---- Sign-in form ----
-    function SignIn({ onSuccess }) {
-      const [token, setTokenInput] = useState('');
+    // ---- Username prompt ----
+    function UsernamePrompt({ onSuccess }) {
+      const [name, setName] = useState('');
       const [error, setError] = useState('');
       const [loading, setLoading] = useState(false);
 
       async function handleSubmit(e) {
         e.preventDefault();
+        const trimmed = name.trim();
+        if (!trimmed) return;
         setLoading(true); setError('');
         try {
-          const r = await fetch('/buy/api/auth/me', {
-            headers: { 'Authorization': 'Bearer ' + token.trim() }
+          const r = await fetch('/buy/api/auth/guest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ displayName: trimmed }),
           });
-          if (!r.ok) { setError('Invalid token. Try again.'); setLoading(false); return; }
-          const user = await r.json();
-          setToken(token.trim());
-          onSuccess(user);
-        } catch { setError('Connection error.'); }
+          const data = await r.json();
+          if (!r.ok) { setError(data?.error?.message || 'Something went wrong.'); setLoading(false); return; }
+          saveUser(data);
+          onSuccess(data);
+        } catch { setError('Connection error. Try again.'); }
         setLoading(false);
       }
 
       return (
         <div className="signin-card">
-          <p className="signin-title">Sign in to Twiqit</p>
-          <p className="signin-sub">Enter your access token to continue.</p>
+          <p className="signin-title">Welcome to Twiqit</p>
+          <p className="signin-sub">What should we call you?</p>
           <form onSubmit={handleSubmit}>
             <input
               className="signin-input"
-              type="password"
-              placeholder="Access token"
-              value={token}
-              onChange={e => setTokenInput(e.target.value)}
+              type="text"
+              placeholder="Your name"
+              maxLength={32}
+              value={name}
+              onChange={e => setName(e.target.value)}
               autoFocus
             />
-            <button className="btn-signin" type="submit" disabled={loading || !token.trim()}>
-              {loading ? 'Signing in…' : 'Sign In'}
+            <button className="btn-signin" type="submit" disabled={loading || !name.trim()}>
+              {loading ? 'Just a sec…' : 'Let\'s go →'}
             </button>
             {error && <p className="signin-error">{error}</p>}
           </form>
@@ -213,22 +209,9 @@
 
     // ---- App ----
     function App() {
-      const [user, setUser] = useState(null);
-      const [authChecked, setAuthChecked] = useState(false);
+      const [user, setUser] = useState(getSavedUser);
       const [drop, setDrop] = useState({ status: 'loading', data: null });
 
-      // Check stored token on mount
-      useEffect(() => {
-        const token = getToken();
-        if (!token) { setAuthChecked(true); return; }
-        fetch('/buy/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
-          .then(r => r.ok ? r.json() : null)
-          .then(u => { if (u) setUser(u); else clearToken(); })
-          .catch(() => clearToken())
-          .finally(() => setAuthChecked(true));
-      }, []);
-
-      // Load active drop
       useEffect(() => {
         fetch('/buy/api/raffle/active')
           .then(r => r.json())
@@ -236,14 +219,15 @@
           .catch(() => setDrop({ status: 'done', data: null }));
       }, []);
 
-      function handleSignOut() { clearToken(); setUser(null); }
+      function handleSignOut() { clearUser(); setUser(null); }
+      function handleSignIn(u) { setUser(u); }
 
-      if (!authChecked || drop.status === 'loading') {
+      if (drop.status === 'loading') {
         return <div className="loading">Loading…</div>;
       }
 
       if (!user) {
-        return <SignIn onSuccess={u => setUser(u)} />;
+        return <UsernamePrompt onSuccess={handleSignIn} />;
       }
 
       return (
