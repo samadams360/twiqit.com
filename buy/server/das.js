@@ -37,6 +37,14 @@ async function getDropById(id, caller = 'unknown') {
   return row ? rowToDrop(row) : null;
 }
 
+async function listDrops(caller = 'unknown') {
+  const { rows } = await pool.query(
+    'SELECT * FROM drops ORDER BY created_at DESC'
+  );
+  audit('read', 'drops', null, caller, true);
+  return rows.map(rowToDrop);
+}
+
 // ---------------------------------------------------------------------------
 // Raffles
 // ---------------------------------------------------------------------------
@@ -160,6 +168,7 @@ function rowToDrop(row) {
 
 module.exports = {
   getDropById,
+  listDrops,
   createRaffle,
   getActiveRaffle,
   getRaffleById,

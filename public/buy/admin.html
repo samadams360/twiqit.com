@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Twiqit · Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: helvetica, arial, system-ui, sans-serif;
+      background: #1a1a2e; color: #e2e8f0;
+      padding: 24px 16px;
+    }
+    .page { max-width: 680px; margin: 0 auto; }
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #fff; border: 1px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: bold; color: #933333;
+    }
+    .logo-text { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: #94a3b8; }
+    .admin-badge {
+      font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+      background: #933333; color: #fff; padding: 3px 8px; border-radius: 999px;
+    }
+    h2 { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: #64748b; margin: 0 0 14px; }
+    .card {
+      background: #16213e; border: 1px solid #2d3748;
+      border-radius: 12px; padding: 22px 24px; margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 15px; font-weight: 600; color: #e2e8f0; margin: 0 0 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .status-badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.12em;
+    }
+    .status-active { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .status-none { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 16px; }
+    .info-item label { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; margin-bottom: 3px; }
+    .info-item span { font-size: 14px; color: #e2e8f0; font-family: monospace; }
+    .divider { border: none; border-top: 1px solid #2d3748; margin: 16px 0; }
+    label { display: block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin-bottom: 5px; }
+    input, select {
+      width: 100%; padding: 9px 12px; border-radius: 7px;
+      background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
+      font-size: 14px; margin-bottom: 14px; outline: none;
+    }
+    input:focus, select:focus { border-color: #933333; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .btn {
+      padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #933333; color: #fff; }
+    .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .btn-danger { background: #7f1d1d; color: #fca5a5; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 18px; border-radius: 8px; font-size: 13px;
+      max-width: 340px; z-index: 999; display: none;
+    }
+    .toast.success { background: #14532d; color: #86efac; border: 1px solid #166534; }
+    .toast.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+    .empty { color: #64748b; font-size: 14px; font-style: italic; }
+    .raffle-id { font-size: 11px; color: #64748b; font-family: monospace; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="top-bar">
+      <a class="logo" href="/buy">
+        <div class="logo-circle">T</div>
+        <span class="logo-text">Twiqit</span>
+      </a>
+      <span class="admin-badge">Admin</span>
+    </div>
+
+    <h2>Active Raffle</h2>
+    <div class="card" id="active-card">
+      <div class="empty">Loading…</div>
+    </div>
+
+    <h2>Create New Raffle</h2>
+    <div class="card">
+      <div class="card-title">New Raffle</div>
+      <label>Drop</label>
+      <select id="create-drop"></select>
+      <div class="form-row">
+        <div>
+          <label>Min Twiq Threshold</label>
+          <input type="number" id="create-min" value="500" min="1" />
+        </div>
+        <div>
+          <label>Max Twiq Threshold</label>
+          <input type="number" id="create-max" value="5000" min="1" />
+        </div>
+      </div>
+      <label>Expires At</label>
+      <input type="datetime-local" id="create-expires" />
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="createRaffle()">Create Raffle</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let activeRaffle = null;
+
+    function toast(msg, type = 'success') {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast ' + type;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 3500);
+    }
+
+    function fmt(cents) { return '$' + (cents / 100).toFixed(2); }
+    function fmtDate(d) { return new Date(d).toLocaleString(); }
+
+    async function api(method, path, body) {
+      const r = await fetch('/buy/api' + path, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await r.json();
+      if (!r.ok) throw Object.assign(new Error(data?.error?.message || 'Request failed'), { code: data?.error?.code, status: r.status });
+      return data;
+    }
+
+    async function loadDrops() {
+      try {
+        const drops = await api('GET', '/admin/drops');
+        const sel = document.getElementById('create-drop');
+        sel.innerHTML = drops.map(d =>
+          `<option value="${d.id}">${d.name} (${fmt(d.retailValue)})</option>`
+        ).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadActive() {
+      const card = document.getElementById('active-card');
+      try {
+        const data = await api('GET', '/raffle/active');
+        if (!data) {
+          card.innerHTML = `<div class="empty">No active raffle. Create one below.</div>`;
+          activeRaffle = null;
+          return;
+        }
+        activeRaffle = data.raffle;
+        card.innerHTML = `
+          <div class="card-title">
+            ${data.drop.name}
+            <span class="status-badge status-active">Active</span>
+          </div>
+          <div class="raffle-id">ID: ${data.raffle.id}</div>
+          <hr class="divider" />
+          <div class="info-grid">
+            <div class="info-item"><label>Retail Value</label><span>${fmt(data.drop.retailValue)}</span></div>
+            <div class="info-item"><label>Expires</label><span>${fmtDate(data.raffle.expiresAt)}</span></div>
+            <div class="info-item"><label>Min Threshold</label><span>${data.raffle.minTwiqThreshold} Twiqs</span></div>
+            <div class="info-item"><label>Max Threshold</label><span>${data.raffle.maxTwiqThreshold} Twiqs</span></div>
+            <div class="info-item"><label>Total Bid</label><span>${data.raffle.totalTwiqsBid} Twiqs</span></div>
+          </div>
+          <hr class="divider" />
+          <div style="margin-bottom:14px">
+            <label>Update Min Threshold</label>
+            <input type="number" id="upd-min" value="${data.raffle.minTwiqThreshold}" min="1" />
+            <label>Update Max Threshold</label>
+            <input type="number" id="upd-max" value="${data.raffle.maxTwiqThreshold}" min="1" />
+            <label>Update Expires At</label>
+            <input type="datetime-local" id="upd-expires" value="${toLocalInput(data.raffle.expiresAt)}" />
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-secondary" onclick="updateRaffle()">Update Raffle</button>
+            <button class="btn btn-danger" onclick="showReplace()">Replace Raffle</button>
+          </div>
+          <div id="replace-form" style="display:none;margin-top:18px;border-top:1px solid #2d3748;padding-top:16px">
+            <div class="card-title" style="font-size:13px;margin-bottom:12px">Replace With New Raffle</div>
+            <label>New Drop</label>
+            <select id="rep-drop"></select>
+            <div class="form-row">
+              <div><label>Min Threshold</label><input type="number" id="rep-min" value="500" min="1" /></div>
+              <div><label>Max Threshold</label><input type="number" id="rep-max" value="5000" min="1" /></div>
+            </div>
+            <label>Expires At</label>
+            <input type="datetime-local" id="rep-expires" />
+            <div class="btn-row">
+              <button class="btn btn-danger" onclick="replaceRaffle()">Confirm Replace</button>
+              <button class="btn btn-secondary" onclick="hideReplace()">Cancel</button>
+            </div>
+          </div>
+        `;
+        // Populate replace drop selector
+        const drops = await api('GET', '/admin/drops');
+        const repSel = document.getElementById('rep-drop');
+        if (repSel) repSel.innerHTML = drops.map(d =>
+          `<option value="${d.id}">${d.name} (${fmt(d.retailValue)})</option>`
+        ).join('');
+      } catch (e) {
+        card.innerHTML = `<div class="empty" style="color:#fca5a5">Error loading raffle: ${e.message}</div>`;
+      }
+    }
+
+    function toLocalInput(dateStr) {
+      const d = new Date(dateStr);
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function defaultExpiry() {
+      const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      return toLocalInput(d.toISOString());
+    }
+
+    function showReplace() { document.getElementById('replace-form').style.display = 'block'; }
+    function hideReplace() { document.getElementById('replace-form').style.display = 'none'; }
+
+    async function createRaffle() {
+      try {
+        const dropId = document.getElementById('create-drop').value;
+        const minTwiqThreshold = parseInt(document.getElementById('create-min').value);
+        const maxTwiqThreshold = parseInt(document.getElementById('create-max').value);
+        const expiresAt = new Date(document.getElementById('create-expires').value).toISOString();
+        await api('POST', '/admin/raffle', { dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt });
+        toast('Raffle created successfully');
+        loadActive();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    async function updateRaffle() {
+      if (!activeRaffle) return;
+      try {
+        const minTwiqThreshold = parseInt(document.getElementById('upd-min').value);
+        const maxTwiqThreshold = parseInt(document.getElementById('upd-max').value);
+        const expiresAt = new Date(document.getElementById('upd-expires').value).toISOString();
+        await api('PUT', '/admin/raffle/' + activeRaffle.id, { minTwiqThreshold, maxTwiqThreshold, expiresAt });
+        toast('Raffle updated');
+        loadActive();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    async function replaceRaffle() {
+      if (!activeRaffle) return;
+      try {
+        const dropId = document.getElementById('rep-drop').value;
+        const minTwiqThreshold = parseInt(document.getElementById('rep-min').value);
+        const maxTwiqThreshold = parseInt(document.getElementById('rep-max').value);
+        const expiresAt = new Date(document.getElementById('rep-expires').value).toISOString();
+        await api('POST', '/admin/raffle/' + activeRaffle.id + '/replace', { dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt });
+        toast('Raffle replaced — new raffle is now active');
+        loadActive();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    // Init
+    document.getElementById('create-expires').value = defaultExpiry();
+    loadDrops();
+    loadActive();
+  </script>
+</body>
+</html>

@@ -137,4 +137,17 @@ router.post('/admin/raffle/:id/replace', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// GET /buy/api/admin/drops — list all drops (for admin UI drop selector)
+// ---------------------------------------------------------------------------
+router.get('/admin/drops', async (req, res) => {
+  try {
+    const drops = await das.listDrops('admin');
+    res.json(drops);
+  } catch (err) {
+    log('error', 'list_drops', { message: err.message });
+    errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
+  }
+});
+
 module.exports = router;
