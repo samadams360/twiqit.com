@@ -25,6 +25,43 @@ function audit(op, table, recordId, caller, success) {
 }
 
 // ---------------------------------------------------------------------------
+// Users
+// ---------------------------------------------------------------------------
+async function createUser(data, caller = 'unknown') {
+  const id = data.id || uuidv4();
+  const { displayName, tokenHash } = data;
+  const { rows } = await pool.query(
+    `INSERT INTO users (id, display_name, token_hash)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (token_hash) DO NOTHING
+     RETURNING *`,
+    [id, displayName, tokenHash]
+  );
+  audit('write', 'users', id, caller, true);
+  return rows[0] ? rowToUser(rows[0]) : null;
+}
+
+async function getUserById(id, caller = 'unknown') {
+  const { rows } = await pool.query(
+    'SELECT * FROM users WHERE id = $1',
+    [id]
+  );
+  const row = rows[0] ?? null;
+  audit('read', 'users', id, caller, !!row);
+  return row ? rowToUser(row) : null;
+}
+
+async function getUserByToken(tokenHash, caller = 'unknown') {
+  const { rows } = await pool.query(
+    'SELECT * FROM users WHERE token_hash = $1',
+    [tokenHash]
+  );
+  const row = rows[0] ?? null;
+  audit('read', 'users', row?.id ?? null, caller, !!row);
+  return row ? rowToUser(row) : null;
+}
+
+// ---------------------------------------------------------------------------
 // Drops
 // ---------------------------------------------------------------------------
 async function getDropById(id, caller = 'unknown') {
@@ -139,6 +176,15 @@ async function closeActiveRaffles(caller = 'unknown') {
 // ---------------------------------------------------------------------------
 // Row mappers
 // ---------------------------------------------------------------------------
+function rowToUser(row) {
+  return {
+    id: row.id,
+    displayName: row.display_name,
+    tokenHash: row.token_hash,
+    createdAt: row.created_at,
+  };
+}
+
 function rowToRaffle(row) {
   return {
     id: row.id,
@@ -167,6 +213,9 @@ function rowToDrop(row) {
 }
 
 module.exports = {
+  createUser,
+  getUserById,
+  getUserByToken,
   getDropById,
   listDrops,
   createRaffle,

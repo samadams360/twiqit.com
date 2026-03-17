@@ -63,208 +63,207 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - **Validates: Requirements 1.1**
   - **Checkpoint:** Admin can `POST /buy/api/admin/raffle` to create a raffle and immediately see it appear on the homepage at `twiqit.com/buy`.
 
-- [ ] 4. Checkpoint — Ensure all tests pass
+- [x] 4. Slice 4 Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Slice 4 — Twiq Earning
-  - [ ] 5.1 Extend `Data_Access_Service` — twiq_transactions table
+- [x] 5. Slice 5 — User Scaffolding (Bearer Token Auth)
+  - [x] 5.1 Extend `Data_Access_Service` — users table
+    - Add `createUser`, `getUserById`, `getUserByToken` methods
+    - Seed a single default user row on startup if none exists
+    - Use parameterized queries exclusively; append audit log entry on every operation
+    - _Requirements: 8.1, 9.4_
+    - **Files:** `buy/server/das.js`, `buy/server/migrations/002_users.sql`
+  - [x] 5.2 Implement bearer token auth middleware
+    - Read `ADMIN_TOKEN` from env; any request with `Authorization: Bearer <ADMIN_TOKEN>` resolves to the seeded user and sets `req.user`
+    - Unauthenticated requests to protected routes return HTTP 401
+    - Admin routes (`/buy/api/admin/*`) require auth; return HTTP 403 if token missing/invalid
+    - _Requirements: 8.1, 4.1, 4.5_
+    - **Files:** `buy/server/authMiddleware.js`, `buy/server/raffleRouter.js`, `index.js`
+  - [x] 5.3 Expose `GET /buy/api/auth/me` endpoint
+    - Returns the current user object if authenticated; HTTP 401 otherwise
+    - _Requirements: 8.1_
+  - [x] 5.4 Wire auth state into the React shell
+    - On load, call `GET /buy/api/auth/me` to check if a token is stored in localStorage
+    - Display the user's display name in the header when authenticated
+    - Show a simple token-entry prompt (input + "Sign In" button) when not authenticated
+    - Gate admin UI link behind auth
+    - _Requirements: 8.1_
+    - **Files:** `public/buy/index.html`
+  - **Checkpoint:** Entering the `ADMIN_TOKEN` in the UI signs the user in and shows their name. Admin endpoints return 403 without the token. `GET /buy/api/auth/me` returns the user when authenticated.
+
+- [ ] 6. Slice 6 — Twiq Earning
+  - [ ] 6.1 Extend `Data_Access_Service` — twiq_transactions table
     - Implement `getTwiqBalance`, `createTwiqTransaction`, `getLastAdWatchTime`
     - Wrap balance update + transaction insert in a single PostgreSQL transaction
     - _Requirements: 2.1, 2.2, 2.3_
-  - [ ] 5.2 Implement `Twiq_Service`
+  - [ ] 6.2 Implement `Twiq_Service`
     - `POST /buy/api/twiqs/watch-ad` — credit 100 Twiqs if last watch > 24h ago; HTTP 429 with eligible-at time otherwise
     - `GET /buy/api/twiqs/balance` — return current balance
     - `POST /buy/api/twiqs/cashout` — deduct balance, initiate bank transfer; on failure roll back and notify user
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
-  - [ ]* 5.3 Write property test for ad watch credit
+  - [ ]* 6.3 Write property test for ad watch credit
     - **Property 2: Ad watch credits exactly 100 Twiqs**
     - **Validates: Requirements 2.2**
-  - [ ]* 5.4 Write property test for ad watch cooldown
+  - [ ]* 6.4 Write property test for ad watch cooldown
     - **Property 3: Ad watch 24-hour cooldown enforcement**
     - **Validates: Requirements 2.3, 2.4**
-  - [ ]* 5.5 Write property test for cashout balance invariant
+  - [ ]* 6.5 Write property test for cashout balance invariant
     - **Property 4: Cashout balance invariant**
     - **Validates: Requirements 2.6, 2.7**
-  - [ ] 5.6 Add Twiq balance display and "Watch Ad" UI to React homepage
+  - [ ] 6.6 Add Twiq balance display and "Watch Ad" UI to React homepage
     - Show current Twiq balance on the homepage
     - "Watch Ad" button; on success increment displayed balance; on cooldown show time remaining
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
   - **Checkpoint:** Visiting `twiqit.com/buy`, clicking "Watch Ad" earns 100 Twiqs and the updated balance is shown. Clicking again within 24h shows the cooldown message.
 
-- [ ] 6. Slice 5 — Bidding
-  - [ ] 6.1 Extend `Data_Access_Service` — bid_entries table
+- [ ] 7. Slice 7 — Bidding
+  - [ ] 7.1 Extend `Data_Access_Service` — bid_entries table
     - Implement `createBidEntry`, `getBidEntriesByRaffleId`
     - _Requirements: 3.1, 3.2_
-  - [ ] 6.2 Implement raffle bidding endpoint
+  - [ ] 7.2 Implement raffle bidding endpoint
     - `POST /buy/api/raffle/:id/bid` — deduct Twiqs via Twiq_Service, record BidEntry via DAS
     - HTTP 422 on insufficient balance; HTTP 409 if raffle not active
     - After each bid, check if `totalTwiqsBid >= maxTwiqThreshold`; if so, close raffle and trigger winner selection
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 5.1_
-  - [ ]* 6.3 Write property test for bid deduction and recording
+  - [ ]* 7.3 Write property test for bid deduction and recording
     - **Property 5: Bid deduction and recording**
     - **Validates: Requirements 3.1, 3.2**
-  - [ ]* 6.4 Write property test for closed raffle bid rejection
+  - [ ]* 7.4 Write property test for closed raffle bid rejection
     - **Property 6: Closed raffle rejects bids**
     - **Validates: Requirements 3.4**
-  - [ ]* 6.5 Write property test for max threshold close
+  - [ ]* 7.5 Write property test for max threshold close
     - **Property 11: Max threshold triggers immediate close**
     - **Validates: Requirements 5.1**
-  - [ ] 6.6 Add bid submission UI to React homepage
+  - [ ] 7.6 Add bid submission UI to React homepage
     - Bid amount input + "Place Bid" button on the active drop card
     - Show inline success feedback (updated balance) or error message (insufficient balance, inactive raffle)
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
   - **Checkpoint:** A user with Twiqs can place a bid on the active drop. Balance decrements and the bid is recorded. Bidding on a closed raffle shows an error.
 
-- [ ] 7. Checkpoint — Ensure all tests pass
+- [ ] 8. Slice 8 Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Slice 6 — Raffle Expiration and Winner Selection
-  - [ ] 8.1 Implement `Winner_Selector` module
+- [ ] 9. Slice 9 — Raffle Expiration and Winner Selection
+  - [ ] 9.1 Implement `Winner_Selector` module
     - `selectWinner(bidEntries: BidEntry[]): BidEntry` using a cryptographically seeded random index
     - Export as an interface + default implementation so the dependency can be swapped
     - _Requirements: 6.1, 6.2_
-  - [ ]* 8.2 Write property test for winner validity
+  - [ ]* 9.2 Write property test for winner validity
     - **Property 14: Winner is always a valid bid entry**
     - **Validates: Requirements 6.1, 6.3**
-  - [ ] 8.3 Implement `Notification_Service` with pluggable email provider
+  - [ ] 9.3 Implement `Notification_Service` with pluggable email provider
     - `sendWinnerNotification(user, raffle)`
     - `sendCashoutFailure(user, reason)`
     - `sendAdCooldownNotice(user, eligibleAt)`
     - `sendAdminRaffleUnderThreshold(admin, raffle)`
     - _Requirements: 7.1, 2.7, 2.4, 5.3_
-  - [ ]* 8.4 Write unit tests for Notification_Service
+  - [ ]* 9.4 Write unit tests for Notification_Service
     - Test each method dispatches to the email provider with the correct payload
     - _Requirements: 7.1_
-  - [ ] 8.5 Implement raffle expiration scheduler
+  - [ ] 9.5 Implement raffle expiration scheduler
     - Background job polling for raffles where `expiresAt` has passed and status is `active`
     - If `totalTwiqsBid >= minTwiqThreshold`: close raffle, invoke `Winner_Selector`, record winner, call `sendWinnerNotification`
     - If `totalTwiqsBid < minTwiqThreshold`: set status to `no_winner`, call `sendAdminRaffleUnderThreshold`
     - _Requirements: 5.2, 5.3_
-  - [ ]* 8.6 Write property test for time expiration with sufficient bids
+  - [ ]* 9.6 Write property test for time expiration with sufficient bids
     - **Property 12: Time expiration triggers close**
     - **Validates: Requirements 5.2**
-  - [ ]* 8.7 Write property test for under-threshold expiration
+  - [ ]* 9.7 Write property test for under-threshold expiration
     - **Property 13: Under-threshold expiration yields no winner**
     - **Validates: Requirements 5.3**
-  - [ ]* 8.8 Write property test for winner notification
+  - [ ]* 9.8 Write property test for winner notification
     - **Property 15: Winner notification is sent**
     - **Validates: Requirements 7.1**
   - **Checkpoint:** A raffle with a past `expiresAt` and sufficient bids is automatically closed, a winner is selected, and the winner receives an email notification.
 
-- [ ] 9. Slice 7 — Winner Receipt Confirmation
-  - [ ] 9.1 Implement receipt confirmation endpoint
+- [ ] 10. Slice 10 — Winner Receipt Confirmation
+  - [ ] 10.1 Implement receipt confirmation endpoint
     - `POST /buy/api/raffle/:id/confirm-receipt` — set raffle status to `receipt_confirmed`
     - HTTP 409 if raffle is not in `winner_selected` state
     - _Requirements: 7.2, 7.3_
-  - [ ]* 9.2 Write property test for receipt confirmation status transition
+  - [ ]* 10.2 Write property test for receipt confirmation status transition
     - **Property 16: Receipt confirmation updates raffle status**
     - **Validates: Requirements 7.2**
-  - [ ] 9.3 Add "Confirm Receipt" UI
+  - [ ] 10.3 Add "Confirm Receipt" UI
     - If the most recent raffle has status `winner_selected`, show a "Confirm Receipt" button
     - On click, call `POST /buy/api/raffle/:id/confirm-receipt` and update the displayed raffle status
     - _Requirements: 7.2, 7.3_
   - **Checkpoint:** The "Confirm Receipt" button appears at `twiqit.com/buy` when a raffle is in `winner_selected` state. Clicking it updates the status to `receipt_confirmed`.
 
-- [ ] 10. Slice 8 — User Profile and Cashout
-  - [ ] 10.1 Extend `Data_Access_Service` — users table
-    - Implement `createUser`, `getUserById`, `updateUser`
+- [ ] 11. Slice 11 — User Profile and Cashout
+  - [ ] 11.1 Extend `Data_Access_Service` — add bank account fields to users table
+    - Implement `updateUser` method
     - Encrypt `bankAccountInfo` with AES-256-GCM before writes; decrypt after reads
     - Use parameterized queries exclusively; append audit log entry on every operation
     - _Requirements: 8.5, 9.4_
-  - [ ] 10.2 Implement `Preference_Service`
+  - [ ] 11.2 Implement `Preference_Service`
     - `PUT /buy/api/user/bank-account` — update encrypted bank account info via DAS
     - `GET /buy/api/user/profile` — return non-sensitive profile fields
     - _Requirements: 8.5_
-  - [ ]* 10.3 Write property test for bank account update persistence
+  - [ ]* 11.3 Write property test for bank account update persistence
     - **Property 18: Bank account update persists**
     - **Validates: Requirements 8.5**
-  - [ ] 10.4 Add profile page and cashout UI in React
+  - [ ] 11.4 Add profile page and cashout UI in React
     - Route `/buy/profile`: form to update bank account info via `PUT /buy/api/user/bank-account`
     - Cashout button on the balance display; calls `POST /buy/api/twiqs/cashout`; shows success or error feedback
     - _Requirements: 8.5, 2.6, 2.7_
   - **Checkpoint:** User can navigate to `/buy/profile`, save bank account info, and initiate a cashout from the homepage balance display.
 
-- [ ] 11. Checkpoint — Ensure all tests pass
+- [ ] 12. Slice 12 Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Slice 9 — AI Ops Agent
-  - [ ] 12.1 Add structured JSON logging to all backend services
+- [ ] 13. Slice 13 — AI Ops Agent
+  - [ ] 13.1 Add structured JSON logging to all backend services
     - Raffle_Service, Twiq_Service, and DAS emit structured JSON logs to stdout
     - Each entry includes: timestamp, service name, severity, operation, relevant IDs
     - _Requirements: 11.1, 11.5_
-  - [ ] 12.2 Implement telemetry endpoint and frontend event emission
+  - [ ] 13.2 Implement telemetry endpoint and frontend event emission
     - `POST /buy/api/telemetry/event` — accept structured client-side events, forward to log aggregator pipeline
     - React frontend emits page views, journey steps (ad watch → bid), and JS errors to this endpoint
     - _Requirements: 11.1_
-  - [ ] 12.3 Implement `AI_Ops_Agent` core: log ingestion and anomaly detection
+  - [ ] 13.3 Implement `AI_Ops_Agent` core: log ingestion and anomaly detection
     - Implement `start()`, `stop()`, `getStatus()` methods
     - Classify events by severity; apply all anomaly detection thresholds from the design
     - Trigger `Notification_Service` alert when any threshold is breached
     - _Requirements: 11.1, 11.2, 11.5_
-  - [ ] 12.4 Implement `generateReport` and scheduled delivery
+  - [ ] 13.4 Implement `generateReport` and scheduled delivery
     - Implement `generateReport(from, to): Promise<OperationalReport>` covering all fields in the design interface
     - Schedule at configurable interval (default: daily); deliver via `Notification_Service`
     - _Requirements: 11.3, 11.4_
-  - [ ] 12.5 Implement log index with 30-day retention and watchdog
+  - [ ] 13.5 Implement log index with 30-day retention and watchdog
     - Persist log events to a searchable index; enforce 30-day retention
     - Watchdog: if agent emits no heartbeat within threshold, send fallback alert via `Notification_Service`
     - _Requirements: 11.6, 11.7_
-  - [ ]* 12.6 Write unit tests for AI_Ops_Agent anomaly detection
+  - [ ]* 13.6 Write unit tests for AI_Ops_Agent anomaly detection
     - Test each threshold rule fires at the correct boundary value
     - Test that alerts are dispatched to Notification_Service on breach
     - _Requirements: 11.2, 11.5_
   - **Checkpoint:** Backend services emit structured logs. The ops agent starts alongside the server, detects injected anomalies in tests, and the telemetry endpoint accepts frontend events.
 
-- [ ] 13. Slice 10 — Hardening
-  - [ ] 13.1 Enforce TLS on all DB connections and verify least-privilege role
+- [ ] 14. Slice 14 — Hardening
+  - [ ] 14.1 Enforce TLS on all DB connections and verify least-privilege role
     - Confirm `sslmode=require` is active; reject plaintext connections at the PostgreSQL config level
     - Verify `twiqit_app` DB role has only SELECT/INSERT/UPDATE on required tables; no DDL access
     - _Requirements: 9.1, 9.2, 9.3_
-  - [ ] 13.2 Verify PII encryption coverage
+  - [ ] 14.2 Verify PII encryption coverage
     - Ensure no plaintext PII is written to the DB in any code path
     - _Requirements: 9.4_
-  - [ ] 13.3 Audit all DAS query paths for parameterized query compliance
+  - [ ] 14.3 Audit all DAS query paths for parameterized query compliance
     - Review every DAS method; replace any raw string interpolation with bound parameters
     - _Requirements: 9.4_
-  - [ ] 13.4 Verify audit log is append-only and covers all DAS operations
+  - [ ] 14.4 Verify audit log is append-only and covers all DAS operations
     - Confirm every DAS read/write emits an audit log entry with timestamp, operation, table, record ID, caller, and outcome
     - _Requirements: 9.4_
-  - [ ]* 13.5 Write property test for PII encryption round-trip
+  - [ ]* 14.5 Write property test for PII encryption round-trip
     - Verify that writing and reading back a user record returns the original plaintext bankAccountInfo
     - **Validates: Requirements 9.4**
-  - [ ]* 13.6 Write remaining property-based tests not yet covered
+  - [ ]* 14.6 Write remaining property-based tests not yet covered
     - Any correctness properties from the design not yet covered by earlier slices
     - Each test tagged: `// Feature: ecommerce-platform, Property {N}: {property_text}`
   - **Checkpoint:** All property-based tests pass. No plaintext PII in the DB. All queries are parameterized. Audit log entries present for every DAS operation.
 
-- [ ] 14. Final checkpoint — Ensure all tests pass
+- [ ] 15. Slice 15 Final Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
-
-- [ ] 15. Slice 11 — Google OAuth (Auth)
-  - [ ] 15.1 Extend `Data_Access_Service` — add Google OAuth fields to users table
-    - Add `getUserByEmail`, `getUserByGoogleId` methods
-    - Encrypt `email` with AES-256-GCM before writes; decrypt after reads
-    - _Requirements: 8.2, 8.3, 9.4_
-  - [ ] 15.2 Implement `Auth_Service`
-    - `GET /buy/api/auth/google` — redirect to Google OAuth consent screen
-    - `GET /buy/api/auth/google/callback` — exchange code, create or retrieve User via DAS, return signed JWT + refresh token
-    - `POST /buy/api/auth/logout` — invalidate session
-    - On OAuth failure/denial: return HTTP 401, no account created or modified
-    - _Requirements: 8.1, 8.2, 8.3, 8.4_
-  - [ ]* 15.3 Write property test for Google OAuth sign-in
-    - **Property 17: Google OAuth sign-in creates or retrieves user**
-    - **Validates: Requirements 8.2, 8.3**
-  - [ ]* 15.4 Write property test for non-admin denial
-    - **Property 7: Non-admin raffle management denial**
-    - **Validates: Requirements 4.1, 4.5**
-  - [ ] 15.5 Wire auth into the React shell
-    - "Sign in with Google" button → redirect to `GET /buy/api/auth/google`
-    - Handle `/buy/auth/callback` route; store JWT in memory/cookie
-    - Display the authenticated user's display name in the header after sign-in
-    - Show descriptive error message on auth failure
-    - Gate admin raffle management UI behind auth
-    - _Requirements: 8.1, 8.2, 8.3, 8.4_
-  - **Checkpoint:** User can click "Sign in with Google", complete OAuth, and see their name displayed. Admin endpoints reject unauthenticated requests with HTTP 403.
 
 ## Notes
 

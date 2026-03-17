@@ -24,6 +24,18 @@ app.get("/commerce/*", (req, res) =>
 const raffleRouter = require("./buy/server/raffleRouter");
 app.use("/buy/api", raffleRouter);
 
+// Seed default user from ADMIN_TOKEN on startup
+const crypto = require("crypto");
+const das = require("./buy/server/das");
+if (process.env.ADMIN_TOKEN) {
+  const tokenHash = crypto.createHash("sha256").update(process.env.ADMIN_TOKEN).digest("hex");
+  das.getUserByToken(tokenHash, "startup").then(existing => {
+    if (!existing) {
+      return das.createUser({ displayName: "Admin", tokenHash }, "startup");
+    }
+  }).catch(err => console.error("User seed error:", err.message));
+}
+
 // /buy SPA static + catch-all
 const buyDir = path.join(__dirname, "public", "buy");
 app.get("/buy/admin", (req, res) =>

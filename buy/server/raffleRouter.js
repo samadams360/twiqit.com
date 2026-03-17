@@ -9,6 +9,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const das = require('./das');
+const { requireAuth } = require('./authMiddleware');
 
 const router = express.Router();
 
@@ -30,6 +31,25 @@ function errResponse(res, status, code, message) {
 }
 
 // ---------------------------------------------------------------------------
+// GET /buy/api/auth/me — return current user if authenticated
+// ---------------------------------------------------------------------------
+router.get('/auth/me', async (req, res) => {
+  const header = req.headers['authorization'] ?? '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required.' } });
+  const crypto = require('crypto');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  try {
+    const user = await das.getUserByToken(tokenHash, 'auth_me');
+    if (!user) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid token.' } });
+    res.json({ id: user.id, displayName: user.displayName });
+  } catch (err) {
+    log('error', 'auth_me', { message: err.message });
+    errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /buy/api/raffle/active
 // ---------------------------------------------------------------------------
 router.get('/raffle/active', async (req, res) => {
@@ -46,7 +66,7 @@ router.get('/raffle/active', async (req, res) => {
 // ---------------------------------------------------------------------------
 // POST /buy/api/admin/raffle — create a new active raffle
 // ---------------------------------------------------------------------------
-router.post('/admin/raffle', async (req, res) => {
+router.post('/admin/raffle', requireAuth, async (req, res) => {
   try {
     const { dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt } = req.body ?? {};
 
@@ -78,7 +98,7 @@ router.post('/admin/raffle', async (req, res) => {
 // ---------------------------------------------------------------------------
 // PUT /buy/api/admin/raffle/:id — update active raffle (preserves bid entries)
 // ---------------------------------------------------------------------------
-router.put('/admin/raffle/:id', async (req, res) => {
+router.put('/admin/raffle/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const existing = await das.getRaffleById(id, 'admin');
@@ -105,7 +125,7 @@ router.put('/admin/raffle/:id', async (req, res) => {
 // ---------------------------------------------------------------------------
 // POST /buy/api/admin/raffle/:id/replace — close current, create new active raffle
 // ---------------------------------------------------------------------------
-router.post('/admin/raffle/:id/replace', async (req, res) => {
+router.post('/admin/raffle/:id/replace', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const existing = await das.getRaffleById(id, 'admin');
@@ -140,7 +160,7 @@ router.post('/admin/raffle/:id/replace', async (req, res) => {
 // ---------------------------------------------------------------------------
 // GET /buy/api/admin/drops — list all drops (for admin UI drop selector)
 // ---------------------------------------------------------------------------
-router.get('/admin/drops', async (req, res) => {
+router.get('/admin/drops', requireAuth, async (req, res) => {
   try {
     const drops = await das.listDrops('admin');
     res.json(drops);
