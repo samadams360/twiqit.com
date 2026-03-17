@@ -26,10 +26,10 @@ app.use("/buy/api", raffleRouter);
 
 // /buy SPA static + catch-all
 const buyDir = path.join(__dirname, "public", "buy");
-app.use("/buy", express.static(buyDir));
 app.get("/buy/admin", (req, res) =>
   res.sendFile(path.join(buyDir, "admin.html"))
 );
+app.use("/buy", express.static(buyDir));
 app.get(/^\/buy(\/.*)?$/, (req, res) =>
   res.sendFile(path.join(buyDir, "index.html"))
 );
