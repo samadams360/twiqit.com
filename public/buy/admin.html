@@ -133,6 +133,20 @@
   </style>
 </head>
 <body>
+  <div id="token-prompt" style="display:none;min-height:100vh;align-items:center;justify-content:center">
+    <div style="background:#16213e;border:1px solid #2d3748;border-radius:12px;padding:32px 28px;width:100%;max-width:360px">
+      <div style="font-size:13px;letter-spacing:0.16em;text-transform:uppercase;color:#64748b;margin-bottom:20px">Admin Access</div>
+      <label style="display:block;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#94a3b8;margin-bottom:6px">Admin Token</label>
+      <input id="token-input" type="password" placeholder="Enter admin token"
+        style="width:100%;padding:10px 12px;border-radius:7px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;font-size:14px;margin-bottom:14px;outline:none;box-sizing:border-box" />
+      <button onclick="submitToken()"
+        style="width:100%;padding:11px;border-radius:8px;border:none;cursor:pointer;background:#933333;color:#fff;font-size:13px;font-weight:600;letter-spacing:0.04em">
+        Sign In
+      </button>
+    </div>
+  </div>
+
+  <div id="page-content">
   <div class="page">
     <div class="top-bar">
       <a class="logo" href="/buy">
@@ -206,7 +220,8 @@
     <div class="card" id="ops-card">
       <div class="empty">Loading…</div>
     </div>
-  </div>
+  </div><!-- /.page -->
+  </div><!-- /#page-content -->
 
   <div class="toast" id="toast"></div>
 
@@ -235,7 +250,7 @@
         body: body ? JSON.stringify(body) : undefined,
       });
       const data = await r.json();
-      if (r.status === 401) { window.location.href = '/buy'; return; }
+      if (r.status === 401) { showTokenPrompt(); return; }
       if (!r.ok) throw Object.assign(new Error(data?.error?.message || 'Request failed'), { code: data?.error?.code, status: r.status });
       return data;
     }
@@ -689,13 +704,48 @@
     // Auto-refresh ops every 30s
     setInterval(loadOpsStatus, 30000);
 
-    // Init
-    document.getElementById('create-expires').value = defaultExpiry();
-    loadDrops();
-    loadProducts();
-    loadActive();
-    loadHistory();
-    loadOpsStatus();
+    // ---------------------------------------------------------------------------
+    // Token prompt
+    // ---------------------------------------------------------------------------
+    function showTokenPrompt() {
+      document.getElementById('page-content').style.display = 'none';
+      const p = document.getElementById('token-prompt');
+      p.style.display = 'flex';
+      setTimeout(() => document.getElementById('token-input').focus(), 50);
+    }
+
+    function hideTokenPrompt() {
+      document.getElementById('token-prompt').style.display = 'none';
+      document.getElementById('page-content').style.display = 'block';
+    }
+
+    function submitToken() {
+      const val = document.getElementById('token-input').value.trim();
+      if (!val) return;
+      localStorage.setItem('twiqit_token', val);
+      hideTokenPrompt();
+      initAdmin();
+    }
+
+    document.getElementById('token-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitToken();
+    });
+
+    function initAdmin() {
+      document.getElementById('create-expires').value = defaultExpiry();
+      loadDrops();
+      loadProducts();
+      loadActive();
+      loadHistory();
+      loadOpsStatus();
+    }
+
+    // Init — show token prompt if no token stored
+    if (!localStorage.getItem('twiqit_token')) {
+      showTokenPrompt();
+    } else {
+      initAdmin();
+    }
   </script>
 </body>
 </html>
