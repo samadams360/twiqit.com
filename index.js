@@ -6,6 +6,21 @@ app.set('trust proxy', true);
 app.use(express.json());
 const port = process.env.PORT || 3000;
 
+// Security headers
+app.use((req, res, next) => {
+  // HSTS: tell browsers to always use HTTPS for 1 year, include subdomains
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Prevent MIME-type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Deny framing (clickjacking protection)
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  // Basic XSS protection for older browsers
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Don't send referrer to external sites
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 // Sam page and assets
 const samDir = path.join(__dirname, "public", "Company", "Sam");
 const sendSamIndex = (req, res) => res.sendFile(path.join(samDir, "index.html"));
