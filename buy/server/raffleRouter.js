@@ -13,6 +13,8 @@ const { requireAuth } = require('./authMiddleware');
 const { selectWinner } = require('./winnerSelector');
 const { sendWinnerNotification } = require('./notificationService');
 
+const opsAgent = require('./opsAgent');
+
 const router = express.Router();
 
 // ---------------------------------------------------------------------------
@@ -571,6 +573,22 @@ router.post('/twiqs/cashout', async (req, res) => {
     });
   } catch (err) {
     log('error', 'cashout', { message: err.message });
+    errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /buy/api/admin/ops-status — OpsAgent health + last-hour report
+// ---------------------------------------------------------------------------
+router.get('/admin/ops-status', requireAuth, async (req, res) => {
+  try {
+    const status = opsAgent.getStatus();
+    const to   = new Date();
+    const from = new Date(to.getTime() - 60 * 60 * 1000); // last hour
+    const report = await opsAgent.generateReport(from, to);
+    res.json({ status, report });
+  } catch (err) {
+    log('error', 'ops_status', { message: err.message });
     errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
   }
 });

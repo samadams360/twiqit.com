@@ -114,6 +114,22 @@
     .product-edit-form.open { display: block; }
     .product-edit-form input { margin-bottom: 8px; }
     .product-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    /* Ops dashboard */
+    .ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .ops-stat { background: #0f172a; border-radius: 8px; padding: 12px 14px; }
+    .ops-stat label { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #475569; margin-bottom: 4px; }
+    .ops-stat .val { font-size: 20px; font-weight: 700; color: #e2e8f0; font-family: monospace; }
+    .ops-stat .val.ok { color: #4ade80; }
+    .ops-stat .val.warn { color: #fbbf24; }
+    .ops-stat .val.crit { color: #f87171; }
+    .ops-anomaly { font-size: 12px; padding: 7px 10px; border-radius: 6px; margin-bottom: 6px; }
+    .ops-anomaly.warning { background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.25); color: #fbbf24; }
+    .ops-anomaly.error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.25);  color: #f87171; }
+    .ops-anomaly.critical{ background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4);   color: #fca5a5; }
+    .ops-funnel { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ops-funnel-step { background: #0f172a; border-radius: 6px; padding: 8px 12px; text-align: center; flex: 1; min-width: 80px; }
+    .ops-funnel-step .fval { font-size: 18px; font-weight: 700; color: #e2e8f0; font-family: monospace; }
+    .ops-funnel-step .flabel { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -184,6 +200,11 @@
     <h2>Raffle History</h2>
     <div id="history-list">
       <div class="card"><div class="empty">Loading…</div></div>
+    </div>
+
+    <h2>Ops Report <span id="ops-refresh-ts" style="font-size:10px;color:#475569;font-weight:400;letter-spacing:0;text-transform:none;margin-left:8px"></span></h2>
+    <div class="card" id="ops-card">
+      <div class="empty">Loading…</div>
     </div>
   </div>
 
@@ -605,12 +626,76 @@
       }
     }
 
+    // ---------------------------------------------------------------------------
+    // Ops Report
+    // ---------------------------------------------------------------------------
+    async function loadOpsStatus() {
+      const card = document.getElementById('ops-card');
+      try {
+        const { status, report } = await api('GET', '/admin/ops-status');
+
+        const agentColor = status.running ? 'ok' : 'crit';
+        const anomColor  = status.anomalyCount === 0 ? 'ok' : status.anomalyCount < 5 ? 'warn' : 'crit';
+        const p95Color   = report.latencyPercentiles.p95 < 500 ? 'ok' : report.latencyPercentiles.p95 < 1500 ? 'warn' : 'crit';
+
+        const recentAnomalies = (report.anomalies || []).slice(-5).reverse();
+        const anomalyHtml = recentAnomalies.length
+          ? recentAnomalies.map(a =>
+              `<div class="ops-anomaly ${a.severity}">
+                <strong>${a.signal.replace(/_/g,' ')}</strong> — ${a.detail}
+                <span style="float:right;color:#475569;font-size:11px">${new Date(a.ts).toLocaleTimeString()}</span>
+              </div>`
+            ).join('')
+          : `<div style="color:#4ade80;font-size:13px">No anomalies in last hour ✓</div>`;
+
+        const f = report.journeyFunnel;
+        const adRate = (report.adWatchCompletionRate * 100).toFixed(0);
+        const adRateColor = report.adWatchCompletionRate >= 0.5 ? 'ok' : 'warn';
+
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="card-title" style="margin:0">Agent Health</div>
+            <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px" onclick="loadOpsStatus()">↻ Refresh</button>
+          </div>
+          <div class="ops-grid">
+            <div class="ops-stat"><label>Agent</label><div class="val ${agentColor}">${status.running ? 'Running' : 'Stopped'}</div></div>
+            <div class="ops-stat"><label>Log Index</label><div class="val">${status.logIndexSize.toLocaleString()}</div></div>
+            <div class="ops-stat"><label>Anomalies (all)</label><div class="val ${anomColor}">${status.anomalyCount}</div></div>
+            <div class="ops-stat"><label>Last Heartbeat</label><div class="val" style="font-size:12px">${new Date(status.lastHeartbeat).toLocaleTimeString()}</div></div>
+            <div class="ops-stat"><label>p95 Latency</label><div class="val ${p95Color}">${report.latencyPercentiles.p95}ms</div></div>
+            <div class="ops-stat"><label>p99 Latency</label><div class="val">${report.latencyPercentiles.p99}ms</div></div>
+            <div class="ops-stat"><label>Twiq Txns (1h)</label><div class="val">${report.twiqTransactionVolume}</div></div>
+            <div class="ops-stat"><label>Ad Completion</label><div class="val ${adRateColor}">${adRate}%</div></div>
+            <div class="ops-stat"><label>Failed Logins</label><div class="val ${report.failedLoginAttempts > 10 ? 'warn' : 'ok'}">${report.failedLoginAttempts}</div></div>
+          </div>
+          <hr class="divider" />
+          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#64748b;margin-bottom:10px">Journey Funnel (last hour)</div>
+          <div class="ops-funnel">
+            <div class="ops-funnel-step"><div class="fval">${f.registered}</div><div class="flabel">Registered</div></div>
+            <div class="ops-funnel-step"><div class="fval">${f.watchedAd}</div><div class="flabel">Watched Ad</div></div>
+            <div class="ops-funnel-step"><div class="fval">${f.placedBid}</div><div class="flabel">Bid</div></div>
+            <div class="ops-funnel-step"><div class="fval">${f.wonRaffle}</div><div class="flabel">Won</div></div>
+          </div>
+          <hr class="divider" />
+          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#64748b;margin-bottom:10px">Recent Anomalies (last hour)</div>
+          ${anomalyHtml}
+        `;
+        document.getElementById('ops-refresh-ts').textContent = 'as of ' + new Date().toLocaleTimeString();
+      } catch (e) {
+        card.innerHTML = `<div class="empty" style="color:#fca5a5">Error: ${e.message}</div>`;
+      }
+    }
+
+    // Auto-refresh ops every 30s
+    setInterval(loadOpsStatus, 30000);
+
     // Init
     document.getElementById('create-expires').value = defaultExpiry();
     loadDrops();
     loadProducts();
     loadActive();
     loadHistory();
+    loadOpsStatus();
   </script>
 </body>
 </html>
