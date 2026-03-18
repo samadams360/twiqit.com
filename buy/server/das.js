@@ -154,6 +154,16 @@ async function getBidEntriesByRaffleId(raffleId, caller = 'unknown') {
   return rows.map(rowToBidEntry);
 }
 
+async function getUserBidTotalForRaffle(raffleId, userId, caller = 'unknown') {
+  const { rows } = await pool.query(
+    `SELECT COALESCE(SUM(amount), 0)::integer AS total
+     FROM bid_entries WHERE raffle_id = $1 AND user_id = $2`,
+    [raffleId, userId]
+  );
+  audit('read', 'bid_entries', raffleId, caller, true);
+  return rows[0].total;
+}
+
 // ---------------------------------------------------------------------------
 // Drops
 // ---------------------------------------------------------------------------
@@ -336,6 +346,7 @@ module.exports = {
   createTwiqTransaction,
   createBidEntry,
   getBidEntriesByRaffleId,
+  getUserBidTotalForRaffle,
   getDropById,
   listDrops,
   createRaffle,

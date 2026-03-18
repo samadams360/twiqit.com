@@ -231,6 +231,22 @@ router.post('/raffle/:id/bid', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// GET /buy/api/raffle/:id/my-bids?userId=<id> — user's total bids on a raffle
+// ---------------------------------------------------------------------------
+router.get('/raffle/:id/my-bids', async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.query;
+  if (!userId) return errResponse(res, 400, 'MISSING_FIELDS', 'userId query param is required.');
+  try {
+    const total = await das.getUserBidTotalForRaffle(id, userId, 'raffle_service');
+    res.json({ raffleId: id, userId, totalBid: total });
+  } catch (err) {
+    log('error', 'get_my_bids', { message: err.message });
+    errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /buy/api/admin/drops — list all drops (for admin UI drop selector)
 // ---------------------------------------------------------------------------
 router.get('/admin/drops', requireAuth, async (req, res) => {

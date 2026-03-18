@@ -356,8 +356,18 @@
       const [bidding, setBidding] = useState(false);
       const [feedback, setFeedback] = useState(null);
       const [totalBid, setTotalBid] = useState(raffle.totalTwiqsBid ?? 0);
+      const [myBids, setMyBids] = useState(null);
 
       const isActive = raffle.status === 'active';
+
+      // Fetch user's personal bid total on mount
+      useEffect(() => {
+        if (!user) return;
+        fetch(`/buy/api/raffle/${raffle.id}/my-bids?userId=${user.id}`)
+          .then(r => r.json())
+          .then(d => setMyBids(d.totalBid ?? 0))
+          .catch(() => setMyBids(0));
+      }, [user, raffle.id]);
 
       async function placeBid(e) {
         e.preventDefault();
@@ -378,6 +388,7 @@
             setFeedback({ type: 'success', msg: `Bid placed! New balance: ${data.balance} Twiqs` });
             setBidAmount('');
             setTotalBid(data.raffle?.totalTwiqsBid ?? totalBid + amount);
+            setMyBids(prev => (prev ?? 0) + amount);
             onBidSuccess(data.balance);
           }
         } catch {
@@ -396,6 +407,9 @@
             <div className="drop-meta">
               <div><strong>{formatCurrency(drop.retailValue)}</strong>Retail Value</div>
               <div><strong>{formatExpiry(raffle.expiresAt)}</strong>Raffle Closes</div>
+              {myBids !== null && (
+                <div><strong>{myBids.toLocaleString()}</strong>Your Twiqs Bid</div>
+              )}
             </div>
             <TwiqProgress
               total={totalBid}
