@@ -31,7 +31,7 @@ async function processExpiredRaffles() {
     for (const row of rows) {
       const raffle = {
         id: row.id,
-        dropId: row.drop_id,
+        productId: row.product_id,
         status: row.status,
         minTwiqThreshold: row.min_twiq_threshold,
         maxTwiqThreshold: row.max_twiq_threshold,

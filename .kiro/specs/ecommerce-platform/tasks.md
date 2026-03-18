@@ -140,7 +140,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
   - **Checkpoint:** A user with Twiqs can place a bid on the active drop. Balance decrements and the bid is recorded. Bidding on a closed raffle shows an error.
 
-- [ ] 8. Slice 8 Checkpoint — Ensure all tests pass
+- [x] 8. Slice 8 Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 9. Slice 9 — Raffle Expiration and Winner Selection
@@ -176,7 +176,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - **Validates: Requirements 7.1**
   - **Checkpoint:** A raffle with a past `expiresAt` and sufficient bids is automatically closed, a winner is selected, and the winner receives an email notification.
 
-- [-] 10. Slice 10 — Winner Receipt Confirmation
+- [x] 10. Slice 10 — Winner Receipt Confirmation
   - [x] 10.1 Implement receipt confirmation endpoint
     - `POST /buy/api/raffle/:id/confirm-receipt` — set raffle status to `receipt_confirmed`
     - HTTP 409 if raffle is not in `winner_selected` state
@@ -190,47 +190,46 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - _Requirements: 7.2, 7.3_
   - **Checkpoint:** The "Confirm Receipt" button appears at `twiqit.com/buy` when a raffle is in `winner_selected` state. Clicking it updates the status to `receipt_confirmed`.
 
-- [ ] 11. Slice 11 — User Profile and Cashout
-  - [ ] 11.1 Extend `Data_Access_Service` — add bank account fields to users table
-    - Implement `updateUser` method
-    - Encrypt `bankAccountInfo` with AES-256-GCM before writes; decrypt after reads
-    - Use parameterized queries exclusively; append audit log entry on every operation
+- [x] 11. Slice 11 — User Profile and Payment Handle
+  - [x] 11.1 Add `venmo_handle` field to users table (stub — no live payment processing)
+    - Migration: `ALTER TABLE users ADD COLUMN venmo_handle VARCHAR(64)`
+    - Update `rowToUser` mapper in DAS to include `venmoHandle`
+    - Update `updateUser` in DAS to handle `venmoHandle` field
     - _Requirements: 8.5, 9.4_
-  - [ ] 11.2 Implement `Preference_Service`
-    - `PUT /buy/api/user/bank-account` — update encrypted bank account info via DAS
-    - `GET /buy/api/user/profile` — return non-sensitive profile fields
+  - [x] 11.2 Implement `Preference_Service` endpoints
+    - `PUT /buy/api/user/payment-handle` — save Venmo handle to user profile via DAS
+    - `GET /buy/api/user/profile` — return non-sensitive profile fields including `venmoHandle`
     - _Requirements: 8.5_
-  - [ ]* 11.3 Write property test for bank account update persistence
-    - **Property 18: Bank account update persists**
-    - **Validates: Requirements 8.5**
-  - [ ] 11.4 Add profile page and cashout UI in React
-    - Route `/buy/profile`: form to update bank account info via `PUT /buy/api/user/bank-account`
-    - Cashout button on the balance display; calls `POST /buy/api/twiqs/cashout`; shows success or error feedback
+  - [x] 11.3 Add profile page and cashout UI in React
+    - Route `/buy/profile`: form to set/update Venmo handle via `PUT /buy/api/user/payment-handle`
+    - Display current Venmo handle if already set
+    - Cashout button on the balance display; calls `POST /buy/api/twiqs/cashout` (stubbed — logs intent, does not process payment); shows "Cashout requested — you will be contacted via Venmo" feedback
+    - If no Venmo handle is set, cashout button prompts user to set one first
     - _Requirements: 8.5, 2.6, 2.7_
-  - **Checkpoint:** User can navigate to `/buy/profile`, save bank account info, and initiate a cashout from the homepage balance display.
+  - **Checkpoint:** User can navigate to `/buy/profile`, save a Venmo handle, and initiate a stubbed cashout from the homepage balance display. No real payment is processed.
 
-- [ ] 12. Slice 12 Checkpoint — Ensure all tests pass
+- [x] 12. Slice 12 Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 13. Slice 13 — AI Ops Agent
-  - [ ] 13.1 Add structured JSON logging to all backend services
+- [x] 13. Slice 13 — AI Ops Agent
+  - [x] 13.1 Add structured JSON logging to all backend services
     - Raffle_Service, Twiq_Service, and DAS emit structured JSON logs to stdout
     - Each entry includes: timestamp, service name, severity, operation, relevant IDs
     - _Requirements: 11.1, 11.5_
-  - [ ] 13.2 Implement telemetry endpoint and frontend event emission
+  - [x] 13.2 Implement telemetry endpoint and frontend event emission
     - `POST /buy/api/telemetry/event` — accept structured client-side events, forward to log aggregator pipeline
     - React frontend emits page views, journey steps (ad watch → bid), and JS errors to this endpoint
     - _Requirements: 11.1_
-  - [ ] 13.3 Implement `AI_Ops_Agent` core: log ingestion and anomaly detection
+  - [x] 13.3 Implement `AI_Ops_Agent` core: log ingestion and anomaly detection
     - Implement `start()`, `stop()`, `getStatus()` methods
     - Classify events by severity; apply all anomaly detection thresholds from the design
     - Trigger `Notification_Service` alert when any threshold is breached
     - _Requirements: 11.1, 11.2, 11.5_
-  - [ ] 13.4 Implement `generateReport` and scheduled delivery
+  - [x] 13.4 Implement `generateReport` and scheduled delivery
     - Implement `generateReport(from, to): Promise<OperationalReport>` covering all fields in the design interface
     - Schedule at configurable interval (default: daily); deliver via `Notification_Service`
     - _Requirements: 11.3, 11.4_
-  - [ ] 13.5 Implement log index with 30-day retention and watchdog
+  - [x] 13.5 Implement log index with 30-day retention and watchdog
     - Persist log events to a searchable index; enforce 30-day retention
     - Watchdog: if agent emits no heartbeat within threshold, send fallback alert via `Notification_Service`
     - _Requirements: 11.6, 11.7_

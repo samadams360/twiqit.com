@@ -8,7 +8,7 @@ Twiqit Alpha is a single-item raffle-based e-commerce platform (Woot-style) buil
 
 - Entire platform lives at `twiqit.com/buy` — the main Twiqit landing page (`/`) is not modified
 - One active Drop at a time — focused, simple UX
-- Twiq economy: earn via qualifying actions, spend on bids, cash out to bank
+- Twiq economy: earn via qualifying actions, spend on bids, cash out via payment handle (Venmo stub in Alpha)
 - Raffle lifecycle: creation → bidding → expiration → winner selection → notification
 - Admin-only raffle management with no user-facing raffle controls
 - Loosely coupled Winner_Selector for algorithm replaceability
@@ -43,7 +43,7 @@ graph TD
 
 - The Web_Server is the only publicly reachable component.
 - The DB_Server sits behind both a logical firewall (e.g., security group / iptables) and a physical firewall, with no direct public internet access.
-- All PII fields (email, bank account info) are encrypted at rest in the DB.
+- All PII fields (email, venmo handle) are encrypted at rest in the DB.
 - Sessions are managed via signed JWTs with short expiry + refresh tokens.
 - No upstream service (Auth, Preference, Raffle, Twiq) accesses PostgreSQL directly — all DB operations are proxied through the Data_Access_Service.
 
@@ -159,7 +159,7 @@ On first sign-in, the Auth_Service creates a User record using the verified emai
 Handles authenticated user profile updates.
 
 ```
-PUT  /buy/api/user/bank-account   — update stored bank account info (encrypted)
+PUT  /buy/api/user/payment-handle    — save Venmo handle to user profile
 GET  /buy/api/user/profile        — retrieve profile (non-sensitive fields)
 ```
 
@@ -170,7 +170,7 @@ Manages Twiq balance, ad-watch crediting, and cash-out.
 ```
 POST /buy/api/twiqs/watch-ad      — credit 100 Twiqs (enforces 24h cooldown)
 GET  /buy/api/twiqs/balance       — return current balance
-POST /buy/api/twiqs/cashout       — initiate withdrawal to stored bank account
+POST /buy/api/twiqs/cashout       — log cashout intent (stubbed, no live payment)
 ```
 
 ### Raffle_Service
@@ -347,7 +347,7 @@ PII fields are encrypted by the Data_Access_Service before being written to Post
 | Field | Encryption |
 |-------|-----------|
 | `users.email` | AES-256-GCM, app-managed key |
-| `users.bankAccountInfo` | AES-256-GCM, app-managed key |
+| `users.venmoHandle` | AES-256-GCM, app-managed key |
 | All other fields | Stored plaintext (non-PII) |
 
 Encryption keys are stored in a secrets manager (e.g., AWS Secrets Manager or HashiCorp Vault) and are never hardcoded or committed to source control. Key rotation is supported without downtime via a versioned key envelope scheme.
@@ -401,7 +401,7 @@ interface User {
   displayName: string;           // from Google profile
   isAdmin: boolean;
   twiqBalance: number;           // integer, non-negative
-  bankAccountInfo: string | null; // encrypted at rest
+  venmoHandle: string | null;     // encrypted at rest
   lastAdWatchedAt: Date | null;
   createdAt: Date;
 }
@@ -610,9 +610,9 @@ Not applicable in Alpha — authentication is exclusively via Google OAuth. No p
 
 ---
 
-### Property 18: Bank account update persists
+### Property 18: Payment handle update persists
 
-*For any* authenticated user, updating their bank account information and then retrieving their profile should return the updated bank account value.
+*For any* authenticated user, updating their Venmo handle and then retrieving their profile should return the updated handle value.
 
 **Validates: Requirements 8.5**
 
@@ -623,7 +623,7 @@ Not applicable in Alpha — authentication is exclusively via Google OAuth. No p
 ### Twiq Operations
 - Insufficient balance on bid → HTTP 422, message: "Insufficient Twiq balance"
 - Ad watch within cooldown → HTTP 429, message: "Ad already watched. Eligible again at {time}"
-- Cashout failure (bank error) → HTTP 502, balance rolled back, user notified via email
+- Cashout failure (no handle set) → HTTP 422, balance unchanged, user prompted to set payment handle
 
 ### Raffle Operations
 - Bid on inactive raffle → HTTP 409, message: "Raffle is no longer active"

@@ -61,6 +61,23 @@ async function getUserByToken(tokenHash, caller = 'unknown') {
   return row ? rowToUser(row) : null;
 }
 
+async function updateUser(id, data, caller = 'unknown') {
+  const fields = [];
+  const values = [];
+  let i = 1;
+  if (data.displayName !== undefined) { fields.push(`display_name = $${i++}`); values.push(data.displayName); }
+  if (data.venmoHandle !== undefined) { fields.push(`venmo_handle = $${i++}`); values.push(data.venmoHandle); }
+  if (fields.length === 0) return getUserById(id, caller);
+  values.push(id);
+  const { rows } = await pool.query(
+    `UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING *`,
+    values
+  );
+  audit('write', 'users', id, caller, true);
+  return rows[0] ? rowToUser(rows[0]) : null;
+}
+
+
 async function getOrCreateGuestUser(displayName, caller = 'unknown') {
   // Find existing guest with this display name (case-insensitive)
   const { rows: existing } = await pool.query(
@@ -167,9 +184,9 @@ async function getUserBidTotalForRaffle(raffleId, userId, caller = 'unknown') {
 // Get the most recent raffle where a given user is the winner
 async function getWinnerRaffleForUser(userId, caller = 'unknown') {
   const { rows } = await pool.query(
-    `SELECT r.*, d.name AS drop_name, d.image_url AS drop_image_url
+    `SELECT r.*, p.name AS product_name, p.image_url AS product_image_url
      FROM raffles r
-     JOIN drops d ON d.id = r.drop_id
+     JOIN products p ON p.id = r.product_id
      WHERE r.winner_id = $1
      ORDER BY r.closed_at DESC LIMIT 1`,
     [userId]
@@ -179,30 +196,124 @@ async function getWinnerRaffleForUser(userId, caller = 'unknown') {
   if (!row) return null;
   return {
     ...rowToRaffle(row),
-    dropName: row.drop_name,
-    dropImageUrl: row.drop_image_url,
+    dropName: row.product_name,
+    dropImageUrl: row.product_image_url,
   };
 }
 
+// Get full raffle history for a user — all raffles they bid on or won
+async function getRaffleHistoryForUser(userId, caller = 'unknown') {
+  const { rows } = await pool.query(
+    `SELECT DISTINCT ON (r.id)
+            r.id, r.status, r.hidden, r.min_twiq_threshold, r.max_twiq_threshold,
+            r.expires_at, r.total_twiqs_bid, r.winner_id, r.winning_bid_id,
+            r.created_by, r.created_at, r.closed_at,
+            p.name AS product_name, p.image_url AS product_image_url,
+            p.retail_value AS product_retail_value,
+            COALESCE(SUM(b.amount) FILTER (WHERE b.user_id = $1), 0)::integer AS user_bid_total,
+            (r.winner_id = $1) AS is_winner
+     FROM raffles r
+     JOIN products p ON p.id = r.product_id
+     LEFT JOIN bid_entries b ON b.raffle_id = r.id AND b.user_id = $1
+     WHERE r.winner_id = $1 OR b.user_id = $1
+     GROUP BY r.id, p.name, p.image_url, p.retail_value
+     ORDER BY r.id, r.created_at DESC`,
+    [userId]
+  );
+  audit('read', 'raffles', userId, caller, true);
+  return rows.map(row => ({
+    id: row.id,
+    status: row.status,
+    hidden: row.hidden ?? false,
+    minTwiqThreshold: row.min_twiq_threshold,
+    maxTwiqThreshold: row.max_twiq_threshold,
+    expiresAt: row.expires_at,
+    totalTwiqsBid: row.total_twiqs_bid,
+    winnerId: row.winner_id,
+    createdAt: row.created_at,
+    closedAt: row.closed_at,
+    dropName: row.product_name,
+    dropImageUrl: row.product_image_url,
+    dropRetailValue: row.product_retail_value,
+    userBidTotal: row.user_bid_total,
+    isWinner: row.is_winner,
+  }));
+}
+
+// Get all raffles where a given user is the winner (for profile history)
+async function getAllWinsForUser(userId, caller = 'unknown') {
+  const { rows } = await pool.query(
+    `SELECT r.*, p.name AS product_name, p.image_url AS product_image_url,
+            p.retail_value AS product_retail_value
+     FROM raffles r
+     JOIN products p ON p.id = r.product_id
+     WHERE r.winner_id = $1
+     ORDER BY r.closed_at DESC`,
+    [userId]
+  );
+  audit('read', 'raffles', userId, caller, true);
+  return rows.map(row => ({
+    ...rowToRaffle(row),
+    dropName: row.product_name,
+    dropImageUrl: row.product_image_url,
+    dropRetailValue: row.product_retail_value,
+  }));
+}
+
 // ---------------------------------------------------------------------------
-// Drops
+// Products
 // ---------------------------------------------------------------------------
+async function createDrop(data, caller = 'unknown') {
+  const id = uuidv4();
+  const { name, description = null, imageUrl = null, retailValue } = data;
+  const { rows } = await pool.query(
+    `INSERT INTO products (id, name, description, image_url, retail_value)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [id, name, description, imageUrl, retailValue]
+  );
+  audit('write', 'products', id, caller, true);
+  return rowToDrop(rows[0]);
+}
+
 async function getDropById(id, caller = 'unknown') {
   const { rows } = await pool.query(
-    'SELECT * FROM drops WHERE id = $1',
+    'SELECT * FROM products WHERE id = $1',
     [id]
   );
   const row = rows[0] ?? null;
-  audit('read', 'drops', id, caller, !!row);
+  audit('read', 'products', id, caller, !!row);
   return row ? rowToDrop(row) : null;
 }
 
 async function listDrops(caller = 'unknown') {
   const { rows } = await pool.query(
-    'SELECT * FROM drops ORDER BY created_at DESC'
+    'SELECT * FROM products ORDER BY created_at DESC'
   );
-  audit('read', 'drops', null, caller, true);
+  audit('read', 'products', null, caller, true);
   return rows.map(rowToDrop);
+}
+
+async function updateDrop(id, data, caller = 'unknown') {
+  const fields = [];
+  const values = [];
+  let i = 1;
+  if (data.name !== undefined)        { fields.push(`name = $${i++}`);         values.push(data.name); }
+  if (data.description !== undefined) { fields.push(`description = $${i++}`);  values.push(data.description); }
+  if (data.imageUrl !== undefined)    { fields.push(`image_url = $${i++}`);    values.push(data.imageUrl); }
+  if (data.retailValue !== undefined) { fields.push(`retail_value = $${i++}`); values.push(data.retailValue); }
+  if (fields.length === 0) return getDropById(id, caller);
+  values.push(id);
+  const { rows } = await pool.query(
+    `UPDATE products SET ${fields.join(', ')} WHERE id = $${i} RETURNING *`,
+    values
+  );
+  audit('write', 'products', id, caller, true);
+  return rowToDrop(rows[0]);
+}
+
+async function deleteDrop(id, caller = 'unknown') {
+  await pool.query('DELETE FROM products WHERE id = $1', [id]);
+  audit('write', 'products', id, caller, true);
 }
 
 // ---------------------------------------------------------------------------
@@ -210,14 +321,14 @@ async function listDrops(caller = 'unknown') {
 // ---------------------------------------------------------------------------
 async function createRaffle(data, caller = 'unknown') {
   const id = data.id || uuidv4();
-  const { dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt } = data;
+  const { productId, minTwiqThreshold, maxTwiqThreshold, expiresAt, createdBy = null } = data;
   const { rows } = await pool.query(
     `INSERT INTO raffles
-       (id, drop_id, status, min_twiq_threshold, max_twiq_threshold, expires_at,
-        total_twiqs_bid, winner_id, winning_bid_id, created_at, closed_at)
-     VALUES ($1, $2, 'active', $3, $4, $5, 0, NULL, NULL, NOW(), NULL)
+       (id, product_id, status, min_twiq_threshold, max_twiq_threshold, expires_at,
+        total_twiqs_bid, winner_id, winning_bid_id, created_by, created_at, closed_at)
+     VALUES ($1, $2, 'active', $3, $4, $5, 0, NULL, NULL, $6, NOW(), NULL)
      RETURNING *`,
-    [id, dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt]
+    [id, productId, minTwiqThreshold, maxTwiqThreshold, expiresAt, createdBy]
   );
   audit('write', 'raffles', id, caller, true);
   return rowToRaffle(rows[0]);
@@ -225,12 +336,16 @@ async function createRaffle(data, caller = 'unknown') {
 
 async function getActiveRaffle(caller = 'unknown') {
   const { rows } = await pool.query(
-    `SELECT r.*, d.name AS drop_name, d.description AS drop_description,
-            d.image_url AS drop_image_url, d.retail_value AS drop_retail_value,
-            d.created_at AS drop_created_at
+    `SELECT r.*, p.name AS product_name, p.description AS product_description,
+            p.image_url AS product_image_url, p.retail_value AS product_retail_value,
+            p.created_at AS product_created_at,
+            u.display_name AS winner_name,
+            c.display_name AS creator_name
      FROM raffles r
-     JOIN drops d ON d.id = r.drop_id
-     WHERE r.status = 'active'
+     JOIN products p ON p.id = r.product_id
+     LEFT JOIN users u ON u.id = r.winner_id
+     LEFT JOIN users c ON c.id = r.created_by
+     WHERE r.status = 'active' AND r.hidden = false
      ORDER BY r.created_at DESC
      LIMIT 1`
   );
@@ -238,14 +353,14 @@ async function getActiveRaffle(caller = 'unknown') {
   audit('read', 'raffles', row?.id ?? null, caller, true);
   if (!row) return null;
   return {
-    raffle: rowToRaffle(row),
+    raffle: { ...rowToRaffle(row), winnerName: row.winner_name ?? null, creatorName: row.creator_name ?? null },
     drop: {
-      id: row.drop_id,
-      name: row.drop_name,
-      description: row.drop_description,
-      imageUrl: row.drop_image_url,
-      retailValue: row.drop_retail_value,
-      createdAt: row.drop_created_at,
+      id: row.product_id,
+      name: row.product_name,
+      description: row.product_description,
+      imageUrl: row.product_image_url,
+      retailValue: row.product_retail_value,
+      createdAt: row.product_created_at,
     },
   };
 }
@@ -273,6 +388,7 @@ async function updateRaffle(id, data, caller = 'unknown') {
   if (data.winnerId !== undefined)         { fields.push('winner_id = $' + i++);            values.push(data.winnerId); }
   if (data.winningBidId !== undefined)     { fields.push('winning_bid_id = $' + i++);       values.push(data.winningBidId); }
   if (data.closedAt !== undefined)         { fields.push('closed_at = $' + i++);            values.push(data.closedAt); }
+  if (data.hidden !== undefined)           { fields.push('hidden = $' + i++);               values.push(data.hidden); }
 
   if (fields.length === 0) return getRaffleById(id, caller);
 
@@ -283,6 +399,64 @@ async function updateRaffle(id, data, caller = 'unknown') {
   );
   audit('write', 'raffles', id, caller, true);
   return rowToRaffle(rows[0]);
+}
+
+// Get the most recent raffle regardless of status (for buy page fallback)
+async function getMostRecentRaffle(caller = 'unknown') {
+  const { rows } = await pool.query(
+    `SELECT r.*, p.name AS product_name, p.description AS product_description,
+            p.image_url AS product_image_url, p.retail_value AS product_retail_value,
+            p.created_at AS product_created_at,
+            u.display_name AS winner_name,
+            c.display_name AS creator_name
+     FROM raffles r
+     JOIN products p ON p.id = r.product_id
+     LEFT JOIN users u ON u.id = r.winner_id
+     LEFT JOIN users c ON c.id = r.created_by
+     WHERE r.hidden = false
+     ORDER BY r.created_at DESC
+     LIMIT 1`
+  );
+  const row = rows[0] ?? null;
+  audit('read', 'raffles', row?.id ?? null, caller, true);
+  if (!row) return null;
+  return {
+    raffle: { ...rowToRaffle(row), winnerName: row.winner_name ?? null, creatorName: row.creator_name ?? null },
+    drop: {
+      id: row.product_id,
+      name: row.product_name,
+      description: row.product_description,
+      imageUrl: row.product_image_url,
+      retailValue: row.product_retail_value,
+      createdAt: row.product_created_at,
+    },
+  };
+}
+
+// List all raffles with drop info, ordered newest first (for admin history)
+async function listRaffles(limit = 50, offset = 0, caller = 'unknown') {
+  const { rows } = await pool.query(
+    `SELECT r.*, p.name AS product_name, p.image_url AS product_image_url,
+            p.retail_value AS product_retail_value,
+            u.display_name AS winner_name,
+            c.display_name AS creator_name
+     FROM raffles r
+     JOIN products p ON p.id = r.product_id
+     LEFT JOIN users u ON u.id = r.winner_id
+     LEFT JOIN users c ON c.id = r.created_by
+     ORDER BY r.created_at DESC
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+  audit('read', 'raffles', null, caller, true);
+  return rows.map(row => ({
+    ...rowToRaffle(row),
+    dropName: row.product_name,
+    dropImageUrl: row.product_image_url,
+    dropRetailValue: row.product_retail_value,
+    winnerName: row.winner_name ?? null,
+    creatorName: row.creator_name ?? null,
+  }));
 }
 
 // Close all currently active raffles (used during replace)
@@ -315,6 +489,7 @@ function rowToUser(row) {
     displayName: row.display_name,
     tokenHash: row.token_hash,
     isGuest: row.is_guest,
+    venmoHandle: row.venmo_handle ?? null,
     createdAt: row.created_at,
   };
 }
@@ -322,14 +497,16 @@ function rowToUser(row) {
 function rowToRaffle(row) {
   return {
     id: row.id,
-    dropId: row.drop_id,
+    productId: row.product_id,
     status: row.status,
+    hidden: row.hidden ?? false,
     minTwiqThreshold: row.min_twiq_threshold,
     maxTwiqThreshold: row.max_twiq_threshold,
     expiresAt: row.expires_at,
     totalTwiqsBid: row.total_twiqs_bid,
     winnerId: row.winner_id,
     winningBidId: row.winning_bid_id,
+    createdBy: row.created_by ?? null,
     createdAt: row.created_at,
     closedAt: row.closed_at,
   };
@@ -360,6 +537,7 @@ module.exports = {
   createUser,
   getUserById,
   getUserByToken,
+  updateUser,
   getOrCreateGuestUser,
   getTwiqBalance,
   getLastAdWatchTime,
@@ -368,10 +546,17 @@ module.exports = {
   getBidEntriesByRaffleId,
   getUserBidTotalForRaffle,
   getWinnerRaffleForUser,
+  getAllWinsForUser,
+  getRaffleHistoryForUser,
+  createDrop,
   getDropById,
   listDrops,
+  updateDrop,
+  deleteDrop,
   createRaffle,
   getActiveRaffle,
+  getMostRecentRaffle,
+  listRaffles,
   getRaffleById,
   updateRaffle,
   closeActiveRaffles,

@@ -141,27 +141,21 @@
       background: #f1f5f9; color: #64748b; font-size: 11px;
       letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px;
     }
-    /* Winner banner */
-    .winner-banner {
+    /* Winner banner — slim strip */
+    .winner-strip {
       width: 100%; max-width: 520px;
-      background: #fff; border-radius: 14px;
-      box-shadow: 0 18px 40px rgba(0,0,0,0.45);
-      padding: 32px 28px; text-align: center; margin-bottom: 16px;
+      background: #f59e0b; border-radius: 10px;
+      padding: 10px 16px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
-    .winner-icon { font-size: 48px; margin-bottom: 12px; }
-    .winner-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px; }
-    .winner-sub { font-size: 14px; color: #555; margin: 0 0 24px; }
+    .winner-strip-text { font-size: 13px; font-weight: 600; color: #1a1a1a; }
     .btn-confirm {
-      padding: 12px 28px; border-radius: 8px; border: none; cursor: pointer;
-      background: #304d44; color: #fff; font-size: 14px; font-weight: 600;
-      letter-spacing: 0.04em; transition: opacity 0.15s;
+      padding: 7px 16px; border-radius: 7px; border: none; cursor: pointer;
+      background: #304d44; color: #fff; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.04em; white-space: nowrap; transition: opacity 0.15s;
     }
     .btn-confirm:hover { opacity: 0.85; }
     .btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
-    .confirmed-badge {
-      display: inline-block; padding: 8px 18px; border-radius: 20px;
-      background: #dcfce7; color: #16a34a; font-size: 13px; font-weight: 600;
-    }
     .back-link {
       display: inline-block; margin-top: 20px;
       font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
@@ -169,11 +163,98 @@
       border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 2px;
     }
     .back-link:hover { color: #fff; border-color: rgba(255,255,255,0.5); }
+    /* Profile page */
+    .profile-card {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+      width: 100%; max-width: 520px; padding: 32px 28px;
+    }
+    .profile-title { font-size: 20px; font-weight: 700; color: #1a1a1a; margin: 0 0 6px; }
+    .profile-sub { font-size: 14px; color: #888; margin: 0 0 24px; }
+    .profile-field { margin-bottom: 18px; }
+    .profile-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #888; margin-bottom: 5px; }
+    .profile-input {
+      width: 100%; padding: 10px 14px; border-radius: 8px;
+      border: 1px solid #cbd5e1; font-size: 15px; outline: none;
+    }
+    .profile-input:focus { border-color: #304d44; }
+    .btn-profile-save {
+      width: 100%; padding: 11px; border-radius: 8px; border: none;
+      background: #304d44; color: #fff; font-size: 14px; font-weight: 600;
+      cursor: pointer; letter-spacing: 0.04em; margin-top: 4px;
+    }
+    .btn-profile-save:hover { background: #253d35; }
+    .btn-profile-save:disabled { opacity: 0.45; cursor: not-allowed; }
+    .profile-feedback { font-size: 13px; margin-top: 10px; }
+    .profile-feedback.success { color: #16a34a; }
+    .profile-feedback.error { color: #dc2626; }
+    .btn-cashout {
+      padding: 7px 14px; border-radius: 7px; border: none; cursor: pointer;
+      background: rgba(255,255,255,0.15); color: #fff; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; transition: opacity 0.15s; margin-top: 6px;
+    }
+    .btn-cashout:hover { opacity: 0.8; }
+    .btn-cashout:disabled { opacity: 0.4; cursor: not-allowed; }
+    .profile-link {
+      font-size: 11px; color: rgba(255,255,255,0.5); cursor: pointer;
+      text-decoration: underline; margin-top: 4px; display: inline-block;
+    }
+    .profile-link:hover { color: rgba(255,255,255,0.8); }
+    /* Win history / raffle history */
+    .win-history { margin-top: 28px; }
+    .win-history-title {
+      font-size: 13px; font-weight: 700; color: #1a1a1a; margin: 0 0 12px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .history-controls {
+      display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .history-sort-label { font-size: 11px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; }
+    .history-sort-btn {
+      font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #cbd5e1;
+      background: #fff; color: #555; cursor: pointer; transition: all 0.15s;
+    }
+    .history-sort-btn.active { background: #304d44; color: #fff; border-color: #304d44; }
+    .win-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px;
+    }
+    .win-row:last-child { border-bottom: none; }
+    .win-row-info { flex: 1; min-width: 0; }
+    .win-row-name { font-weight: 600; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .win-row-meta { font-size: 11px; color: #aaa; margin-top: 2px; }
+    .win-row-id {
+      font-size: 10px; color: #bbb; margin-top: 3px; cursor: pointer;
+      font-family: monospace; letter-spacing: 0.04em;
+    }
+    .win-row-id:hover { color: #304d44; }
+    .win-row-status {
+      font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 20px; white-space: nowrap;
+    }
+    .win-row-status.winner_selected { background: #fef3c7; color: #92400e; }
+    .win-row-status.receipt_confirmed { background: #dcfce7; color: #16a34a; }
+    .win-row-status.active { background: #dbeafe; color: #1e40af; }
+    .win-row-status.closed { background: #f1f5f9; color: #64748b; }    .win-row-confirm {
+      padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer;
+      background: #304d44; color: #fff; font-size: 11px; font-weight: 600;
+      white-space: nowrap; transition: opacity 0.15s;
+    }
+    .win-row-confirm:hover { opacity: 0.85; }
+    .win-row-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+    .outstanding-section {
+      background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 20px;
+    }
+    .outstanding-title {
+      font-size: 12px; font-weight: 700; color: #92400e;
+      letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 10px;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <a class="logo-mark" href="/">
+    <a class="logo-mark" id="logo-link" href="/">
       <div class="logo-circle">T</div>
       <span class="logo-text">Twiqit</span>
     </a>
@@ -186,7 +267,7 @@
     <div class="loading">Loading…</div>
   </div>
 
-  <a class="back-link" href="/">← Back to Twiqit</a>
+  <a class="back-link" href="/buy">← Back to Twiqit Commerce</a>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -211,12 +292,29 @@
       });
     }
 
+    // ---- Telemetry ----
+    const SESSION_ID = Math.random().toString(36).slice(2);
+    function telemetry(type, data = {}) {
+      const user = getSavedUser();
+      fetch('/buy/api/telemetry/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, userId: user?.id ?? null, sessionId: SESSION_ID, data }),
+      }).catch(() => {});
+    }
+    // Global JS error capture
+    window.addEventListener('error', e => {
+      telemetry('js_error', { message: e.message, source: e.filename, line: e.lineno });
+    });
+
     // ---- Balance bar ----
-    function BalanceBar({ user, externalBalance }) {
+    function BalanceBar({ user, externalBalance, onCashout, onProfile }) {
       const [balance, setBalance] = useState(null);
-      const [cooldown, setCooldown] = useState(null); // ISO string of eligibleAt
+      const [cooldown, setCooldown] = useState(null);
       const [remaining, setRemaining] = useState(null);
       const [watching, setWatching] = useState(false);
+      const [cashingOut, setCashingOut] = useState(false);
+      const [cashoutMsg, setCashoutMsg] = useState(null);
 
       useEffect(() => {
         if (!user) return;
@@ -258,9 +356,32 @@
           });
           const data = await r.json();
           if (r.status === 429) { setCooldown(data.error.eligibleAt); setWatching(false); return; }
-          if (r.ok) { setBalance(data.balance); setCooldown(null); }
+          if (r.ok) { setBalance(data.balance); setCooldown(null); telemetry('ad_watch_start'); }
         } catch { /* ignore */ }
         setWatching(false);
+      }
+
+      async function cashOut() {
+        setCashingOut(true); setCashoutMsg(null);
+        try {
+          const r = await fetch('/buy/api/twiqs/cashout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          const data = await r.json();
+          if (!r.ok) {
+            if (data?.error?.code === 'NO_PAYMENT_HANDLE') {
+              setCashoutMsg({ type: 'error', msg: 'Set your Venmo handle in your profile first.' });
+              onProfile && onProfile();
+            } else {
+              setCashoutMsg({ type: 'error', msg: data?.error?.message || 'Cashout failed.' });
+            }
+          } else {
+            setCashoutMsg({ type: 'success', msg: data.message });
+          }
+        } catch { setCashoutMsg({ type: 'error', msg: 'Connection error.' }); }
+        setCashingOut(false);
       }
 
       const onCooldown = !!remaining;
@@ -278,19 +399,30 @@
               {watching ? 'Loading…' : onCooldown ? 'Ad watched' : '▶ Watch Ad +100'}
             </button>
             {onCooldown && <div className="cooldown-msg">Next ad in {remaining}</div>}
+            {cashoutMsg && (
+              <div className="cooldown-msg" style={{ color: cashoutMsg.type === 'error' ? '#fca5a5' : '#86efac', maxWidth: '200px' }}>
+                {cashoutMsg.msg}
+              </div>
+            )}
           </div>
         </div>,
         el
       );
     }
 
-    // ---- Header portal ----
-    function Header({ user, onSignOut }) {
+    function Header({ user, onSignOut, onProfile, onHome }) {
       const el = document.getElementById('header-right');
+      const logo = document.getElementById('logo-link');
+
+      // Point logo to /buy when in the buy app, / otherwise
+      useEffect(() => {
+        if (logo) logo.href = onHome ? '/buy' : '/';
+      }, [onHome]);
+
       if (!el || !user) return null;
       return ReactDOM.createPortal(
         <>
-          <span className="user-name">{user.displayName}</span>
+          <span className="user-name" onClick={onProfile} style={{ cursor: 'pointer', textDecoration: 'underline' }}>{user.displayName}</span>
           <button className="btn-sign-out" onClick={onSignOut}>Change</button>
         </>,
         el
@@ -317,6 +449,7 @@
           const data = await r.json();
           if (!r.ok) { setError(data?.error?.message || 'Something went wrong.'); setLoading(false); return; }
           saveUser(data);
+          telemetry('user_registered', { displayName: data.displayName });
           onSuccess(data);
         } catch { setError('Connection error. Try again.'); }
         setLoading(false);
@@ -345,10 +478,12 @@
       );
     }
 
-    // ---- Winner banner ----
+    // ---- Winner banner — slim strip, only for outstanding wins ----
     function WinnerBanner({ user, winRaffle, onConfirmed }) {
       const [confirming, setConfirming] = useState(false);
-      const [status, setStatus] = useState(winRaffle.status);
+
+      // Only show for unconfirmed wins
+      if (winRaffle.status !== 'winner_selected') return null;
 
       async function confirmReceipt() {
         setConfirming(true);
@@ -358,28 +493,17 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id }),
           });
-          if (r.ok) { setStatus('receipt_confirmed'); onConfirmed && onConfirmed(); }
+          if (r.ok) { onConfirmed && onConfirmed(); }
         } catch { /* ignore */ }
         setConfirming(false);
       }
 
       return (
-        <div className="winner-banner">
-          <div className="winner-icon">🏆</div>
-          <p className="winner-title">You won!</p>
-          <p className="winner-sub">
-            Congratulations — you won the raffle for <strong>{winRaffle.dropName}</strong>.
-            {status === 'winner_selected'
-              ? ' Please confirm receipt once you receive your item.'
-              : ''}
-          </p>
-          {status === 'winner_selected' ? (
-            <button className="btn-confirm" onClick={confirmReceipt} disabled={confirming}>
-              {confirming ? 'Confirming…' : 'Confirm Receipt'}
-            </button>
-          ) : (
-            <span className="confirmed-badge">✓ Receipt Confirmed</span>
-          )}
+        <div className="winner-strip">
+          <span className="winner-strip-text">🏆 You won {winRaffle.dropName}</span>
+          <button className="btn-confirm" onClick={confirmReceipt} disabled={confirming}>
+            {confirming ? 'Confirming…' : 'Confirm Receipt'}
+          </button>
         </div>
       );
     }
@@ -449,6 +573,7 @@
             setBidAmount('');
             setTotalBid(data.raffle?.totalTwiqsBid ?? totalBid + amount);
             setMyBids(prev => (prev ?? 0) + amount);
+            telemetry('bid_placed', { raffleId: raffle.id, amount });
             onBidSuccess(data.balance);
           }
         } catch {
@@ -461,12 +586,15 @@
         <>
           {drop.imageUrl && <img className="drop-image" src={drop.imageUrl} alt={drop.name} />}
           <div className="card-body">
-            <p className="drop-label">Active Drop</p>
+            <p className="drop-label">{isActive ? 'Active Product' : 'Past Product'}</p>
             <h1 className="drop-name">{drop.name}</h1>
             <p className="drop-desc">{drop.description}</p>
             <div className="drop-meta">
               <div><strong>{formatCurrency(drop.retailValue)}</strong>Retail Value</div>
               <div><strong>{formatExpiry(raffle.expiresAt)}</strong>Raffle Closes</div>
+              {raffle.creatorName && (
+                <div><strong>{raffle.creatorName}</strong>Hosted by</div>
+              )}
               {myBids !== null && (
                 <div><strong>{myBids.toLocaleString()}</strong>Your Twiqs Bid</div>
               )}
@@ -497,7 +625,14 @@
                 )}
               </form>
             ) : (
-              <span className="raffle-closed-badge">Raffle Closed</span>
+              <div>
+                <span className="raffle-closed-badge">Raffle Closed</span>
+                {raffle.winnerName && (
+                  <span style={{ marginLeft: '10px', fontSize: '13px', color: '#555' }}>
+                    🏆 Won by <strong>{raffle.winnerName}</strong>
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </>
@@ -508,8 +643,196 @@
       return (
         <div className="empty-state">
           <div className="empty-icon">🎁</div>
-          <h2 className="empty-title">No drop right now</h2>
+          <h2 className="empty-title">No product right now</h2>
           <p className="empty-sub">Check back soon — something good is coming.</p>
+        </div>
+      );
+    }
+
+    // ---- Profile page ----
+    function ProfilePage({ user, onBack }) {
+      const [handle, setHandle] = useState('');
+      const [loading, setLoading] = useState(true);
+      const [saving, setSaving] = useState(false);
+      const [feedback, setFeedback] = useState(null);
+      const [history, setHistory] = useState(null);
+      const [sortBy, setSortBy] = useState('date'); // 'date' | 'status'
+      const [sortDir, setSortDir] = useState('desc'); // 'asc' | 'desc'
+
+      useEffect(() => {
+        fetch(`/buy/api/user/profile?userId=${user.id}`)
+          .then(r => r.json())
+          .then(d => { setHandle(d.venmoHandle || ''); setLoading(false); })
+          .catch(() => setLoading(false));
+        fetch(`/buy/api/raffle/my-history?userId=${user.id}`)
+          .then(r => r.json())
+          .then(d => setHistory(Array.isArray(d) ? d : []))
+          .catch(() => setHistory([]));
+      }, [user.id]);
+
+      async function save(e) {
+        e.preventDefault();
+        setSaving(true); setFeedback(null);
+        try {
+          const r = await fetch('/buy/api/user/payment-handle', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, venmoHandle: handle }),
+          });
+          const data = await r.json();
+          if (!r.ok) { setFeedback({ type: 'error', msg: data?.error?.message || 'Failed to save.' }); }
+          else { setFeedback({ type: 'success', msg: 'Venmo handle saved.' }); }
+        } catch { setFeedback({ type: 'error', msg: 'Connection error.' }); }
+        setSaving(false);
+      }
+
+      async function confirmWin(raffleId) {
+        try {
+          const r = await fetch(`/buy/api/raffle/${raffleId}/confirm-receipt`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          if (r.ok) {
+            setHistory(prev => prev.map(w =>
+              w.id === raffleId ? { ...w, status: 'receipt_confirmed' } : w
+            ));
+          }
+        } catch { /* ignore */ }
+      }
+
+      function toggleSort(field) {
+        if (sortBy === field) {
+          setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        } else {
+          setSortBy(field);
+          setSortDir('desc');
+        }
+      }
+
+      const STATUS_ORDER = { winner_selected: 0, active: 1, receipt_confirmed: 2, closed: 3 };
+
+      const sorted = history ? [...history].sort((a, b) => {
+        let cmp = 0;
+        if (sortBy === 'date') {
+          cmp = new Date(a.createdAt) - new Date(b.createdAt);
+        } else {
+          cmp = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
+        }
+        return sortDir === 'asc' ? cmp : -cmp;
+      }) : [];
+
+      const outstanding = history ? history.filter(r => r.isWinner && r.status === 'winner_selected') : [];
+
+      function formatDate(d) {
+        return d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+      }
+
+      function statusLabel(r) {
+        if (r.isWinner) {
+          if (r.status === 'winner_selected')   return 'Won — Pending Receipt';
+          if (r.status === 'receipt_confirmed') return 'Won — Receipt Confirmed';
+        }
+        if (r.status === 'active')   return 'Active';
+        if (r.status === 'closed' || r.status === 'winner_selected' || r.status === 'receipt_confirmed') return 'Closed';
+        return r.status;
+      }
+
+      function RaffleRow({ r, onConfirm }) {
+        const [copied, setCopied] = useState(false);
+        function copyId() {
+          navigator.clipboard.writeText(r.id).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          });
+        }
+        return (
+          <div className="win-row">
+            <div className="win-row-info">
+              <div className="win-row-name">{r.dropName}</div>
+              <div className="win-row-meta">
+                {formatDate(r.closedAt || r.createdAt)} · {r.userBidTotal.toLocaleString()} Twiqs bid
+                {r.isWinner ? ' · 🏆 Winner' : ''}
+              </div>
+              <div className="win-row-id" onClick={copyId} title="Click to copy raffle ID">
+                {r.id.slice(0, 8)}… {copied ? '✓ copied' : '📋'}
+              </div>
+            </div>
+            {r.isWinner && r.status === 'winner_selected' ? (
+              <button className="win-row-confirm" onClick={() => onConfirm(r.id)}>
+                Confirm Receipt
+              </button>
+            ) : (
+              <span className={`win-row-status ${r.isWinner ? r.status : 'closed'}`}>{statusLabel(r)}</span>
+            )}
+          </div>
+        );
+      }
+
+      return (
+        <div className="profile-card">
+          <p className="profile-title">Your Profile</p>
+          <p className="profile-sub">Hi, {user.displayName}</p>
+          {loading ? <p style={{ color: '#888', fontSize: '14px' }}>Loading…</p> : (
+            <form onSubmit={save}>
+              <div className="profile-field">
+                <div className="profile-label">Venmo Handle</div>
+                <input
+                  className="profile-input"
+                  type="text"
+                  placeholder="@your-venmo"
+                  maxLength={64}
+                  value={handle}
+                  onChange={e => setHandle(e.target.value.replace(/^@+/, ''))}
+                />
+                <div style={{ fontSize: '12px', color: '#aaa', marginTop: '4px' }}>
+                  Used for Twiq cashouts. No payment is processed in Alpha.
+                </div>
+              </div>
+              <button className="btn-profile-save" type="submit" disabled={saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              {feedback && <p className={`profile-feedback ${feedback.type}`}>{feedback.msg}</p>}
+            </form>
+          )}
+
+          {history !== null && (
+            <div className="win-history">
+              {outstanding.length > 0 && (
+                <div className="outstanding-section">
+                  <p className="outstanding-title">⚠ Outstanding — Action Required</p>
+                  {outstanding.map(r => (
+                    <RaffleRow key={r.id} r={r} onConfirm={confirmWin} />
+                  ))}
+                </div>
+              )}
+
+              <p className="win-history-title">Raffle History</p>
+              <div className="history-controls">
+                <span className="history-sort-label">Sort:</span>
+                <button
+                  className={`history-sort-btn${sortBy === 'date' ? ' active' : ''}`}
+                  onClick={() => toggleSort('date')}
+                >
+                  Date {sortBy === 'date' ? (sortDir === 'desc' ? '↓' : '↑') : ''}
+                </button>
+                <button
+                  className={`history-sort-btn${sortBy === 'status' ? ' active' : ''}`}
+                  onClick={() => toggleSort('status')}
+                >
+                  Status {sortBy === 'status' ? (sortDir === 'desc' ? '↓' : '↑') : ''}
+                </button>
+              </div>
+              {sorted.length === 0
+                ? <p style={{ fontSize: '13px', color: '#aaa' }}>No raffle activity yet.</p>
+                : sorted.map(r => <RaffleRow key={r.id} r={r} onConfirm={confirmWin} />)
+              }
+            </div>
+          )}
+
+          <div style={{ marginTop: '24px' }}>
+            <button className="btn-sign-out" onClick={onBack}>← Back to Twiqit Commerce</button>
+          </div>
         </div>
       );
     }
@@ -521,10 +844,41 @@
       const [bidBalance, setBidBalance] = useState(null);
       const [winRaffle, setWinRaffle] = useState(null);
 
+      // Derive view from URL
+      const [view, setViewState] = useState(() =>
+        window.location.pathname === '/buy/profile' ? 'profile' : 'home'
+      );
+
+      function setView(v) {
+        const url = v === 'profile' ? '/buy/profile' : '/buy';
+        window.history.pushState({ view: v }, '', url);
+        setViewState(v);
+      }
+
+      // Handle browser back/forward
       useEffect(() => {
+        function onPop(e) {
+          const v = e.state?.view ?? (window.location.pathname === '/buy/profile' ? 'profile' : 'home');
+          setViewState(v);
+        }
+        window.addEventListener('popstate', onPop);
+        return () => window.removeEventListener('popstate', onPop);
+      }, []);
+
+      useEffect(() => {
+        telemetry('page_view', { path: window.location.pathname });
         fetch('/buy/api/raffle/active')
           .then(r => r.json())
-          .then(data => setDrop({ status: 'done', data }))
+          .then(data => {
+            if (data) {
+              setDrop({ status: 'done', data });
+            } else {
+              // No active raffle — show most recent closed one so winner can still confirm
+              return fetch('/buy/api/raffle/recent')
+                .then(r => r.json())
+                .then(recent => setDrop({ status: 'done', data: recent }));
+            }
+          })
           .catch(() => setDrop({ status: 'done', data: null }));
       }, []);
 
@@ -533,15 +887,15 @@
         fetch(`/buy/api/raffle/my-win?userId=${user.id}`)
           .then(r => r.json())
           .then(data => {
-            // Only show banner for winner_selected or receipt_confirmed
-            if (data && (data.status === 'winner_selected' || data.status === 'receipt_confirmed')) {
+            // Only show banner for outstanding (unconfirmed) wins
+            if (data && data.status === 'winner_selected') {
               setWinRaffle(data);
             }
           })
           .catch(() => {});
       }, [user]);
 
-      function handleSignOut() { clearUser(); setUser(null); }
+      function handleSignOut() { clearUser(); setUser(null); setView('home'); }
       function handleSignIn(u) { setUser(u); }
 
       if (drop.status === 'loading') {
@@ -552,12 +906,22 @@
         return <UsernamePrompt onSuccess={handleSignIn} />;
       }
 
+      if (view === 'profile') {
+        return (
+          <>
+            <Header user={user} onSignOut={handleSignOut} onProfile={() => setView('profile')} onHome={() => setView('home')} />
+            <BalanceBar user={user} externalBalance={bidBalance} onProfile={() => setView('profile')} />
+            <ProfilePage user={user} onBack={() => setView('home')} />
+          </>
+        );
+      }
+
       return (
         <>
-          <Header user={user} onSignOut={handleSignOut} />
-          <BalanceBar user={user} externalBalance={bidBalance} />
+          <Header user={user} onSignOut={handleSignOut} onProfile={() => setView('profile')} onHome={() => setView('home')} />
+          <BalanceBar user={user} externalBalance={bidBalance} onProfile={() => setView('profile')} />
           {winRaffle && (
-            <WinnerBanner user={user} winRaffle={winRaffle} onConfirmed={() => {}} />
+            <WinnerBanner user={user} winRaffle={winRaffle} onConfirmed={() => setWinRaffle(null)} />
           )}
           {drop.data
             ? <DropCard

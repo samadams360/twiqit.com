@@ -45,7 +45,7 @@ Twiqit Alpha is a single-item e-commerce platform inspired by the Woot model, wh
 3. THE System SHALL enforce a limit of one ad watch per User per 24-hour period.
 4. IF a User attempts to watch an ad within 24 hours of their last qualifying action, THEN THE System SHALL reject the credit and notify the User of the time remaining before they are eligible again.
 5. THE qualifying action mechanism SHALL be designed to support additional action types in future iterations without requiring structural changes.
-6. WHEN a User initiates a cash-out request, THE System SHALL process the withdrawal against the User's stored bank account information.
+6. WHEN a User initiates a cash-out request, THE System SHALL log the request and notify the User that they will be contacted via their stored payment handle (e.g. Venmo). No live payment processing occurs in Alpha.
 7. IF a cash-out request fails, THEN THE System SHALL notify the User with a descriptive error message and leave the User's balance unchanged.
 
 ---
@@ -125,7 +125,7 @@ Twiqit Alpha is a single-item e-commerce platform inspired by the Woot model, wh
 2. WHEN a visitor completes Google OAuth sign-in for the first time, THE Auth_Service SHALL automatically create a User account using the verified email and profile from Google.
 3. WHEN a returning User completes Google OAuth sign-in, THE Auth_Service SHALL authenticate the User and establish a session.
 4. IF Google OAuth authentication fails or is denied by the User, THEN THE Auth_Service SHALL return a descriptive error and not create or modify any account.
-5. WHEN an authenticated User updates their bank account information, THE Preference_Service SHALL save the updated information to the User's profile.
+5. WHEN an authenticated User updates their payment handle (e.g. Venmo username), THE Preference_Service SHALL save the updated handle to the User's profile.
 6. THE System SHALL NOT store passwords or support password reset flows in Alpha.
 
 ---

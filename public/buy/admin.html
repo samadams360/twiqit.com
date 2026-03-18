@@ -76,6 +76,44 @@
     .toast.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
     .empty { color: #64748b; font-size: 14px; font-style: italic; }
     .raffle-id { font-size: 11px; color: #64748b; font-family: monospace; word-break: break-all; }
+    .status-closed { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+    .status-winner { background: rgba(234,179,8,0.15); color: #fbbf24; border: 1px solid rgba(234,179,8,0.3); }
+    .status-confirmed { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .status-no-winner { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .history-item { border-bottom: 1px solid #2d3748; }
+    .history-item:last-child { border-bottom: none; }
+    .history-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 13px 0; cursor: pointer; user-select: none;
+    }
+    .history-row:hover .history-drop { color: #fff; }
+    .history-drop { font-size: 14px; font-weight: 600; color: #e2e8f0; margin-bottom: 3px; transition: color 0.15s; }
+    .history-meta { font-size: 12px; color: #64748b; }
+    .history-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .history-chevron { font-size: 11px; color: #475569; transition: transform 0.2s; }
+    .history-chevron.open { transform: rotate(90deg); }
+    .history-detail {
+      display: none; padding: 0 0 14px;
+    }
+    .history-detail.open { display: block; }
+    .detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px;
+      background: #0f172a; border-radius: 8px; padding: 14px 16px;
+    }
+    .detail-item label { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #475569; margin-bottom: 2px; }
+    .detail-item span { font-size: 13px; color: #e2e8f0; font-family: monospace; }
+    /* Product list */
+    .product-item {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; padding: 12px 0; border-bottom: 1px solid #2d3748;
+    }
+    .product-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .product-name { font-size: 14px; font-weight: 600; color: #e2e8f0; margin-bottom: 3px; }
+    .product-meta { font-size: 12px; color: #64748b; }
+    .product-edit-form { margin-top: 10px; display: none; }
+    .product-edit-form.open { display: block; }
+    .product-edit-form input { margin-bottom: 8px; }
+    .product-actions { display: flex; gap: 8px; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -96,7 +134,7 @@
     <h2>Create New Raffle</h2>
     <div class="card">
       <div class="card-title">New Raffle</div>
-      <label>Drop</label>
+      <label>Product</label>
       <select id="create-drop"></select>
       <div class="form-row">
         <div>
@@ -113,6 +151,39 @@
       <div class="btn-row">
         <button class="btn btn-primary" onclick="createRaffle()">Create Raffle</button>
       </div>
+    </div>
+
+    <h2>Manage Products</h2>
+    <div class="card" id="products-card">
+      <div class="empty">Loading…</div>
+    </div>
+    <div class="card" id="new-product-card">
+      <div class="card-title">Add New Product</div>
+      <div class="btn-row" style="margin-bottom:14px">
+        <button class="btn btn-secondary" onclick="fetchSuggestions()" id="suggest-btn">✦ Suggest Product</button>
+      </div>
+      <div id="suggestions-panel" style="display:none;margin-bottom:14px">
+        <label>Pick a suggestion</label>
+        <select id="suggestions-select" onchange="applySuggestion()" style="margin-bottom:8px">
+          <option value="">— select a product —</option>
+        </select>
+      </div>
+      <label>Name</label>
+      <input type="text" id="np-name" placeholder="e.g. Sony WH-1000XM5" />
+      <label>Description</label>
+      <input type="text" id="np-desc" placeholder="Short description" />
+      <label>Image URL</label>
+      <input type="text" id="np-image" placeholder="https://…" />
+      <label>Retail Value (dollars)</label>
+      <input type="number" id="np-value" placeholder="e.g. 399.99" min="0.01" step="0.01" />
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="createProduct()">Add Product</button>
+      </div>
+    </div>
+
+    <h2>Raffle History</h2>
+    <div id="history-list">
+      <div class="card"><div class="empty">Loading…</div></div>
     </div>
   </div>
 
@@ -158,6 +229,138 @@
       } catch (e) { console.error(e); }
     }
 
+    async function loadProducts() {
+      const card = document.getElementById('products-card');
+      try {
+        const [products, raffles] = await Promise.all([
+          api('GET', '/admin/drops'),
+          api('GET', '/admin/raffles'),
+        ]);
+
+        // Build a map: productId → array of raffles
+        const rafflesByProduct = {};
+        for (const r of raffles) {
+          if (!rafflesByProduct[r.productId]) rafflesByProduct[r.productId] = [];
+          rafflesByProduct[r.productId].push(r);
+        }
+
+        if (!products.length) {
+          card.innerHTML = `<div class="empty">No products yet. Add one below.</div>`;
+          return;
+        }
+        card.innerHTML = products.map((p) => {
+          const linked = rafflesByProduct[p.id] || [];
+          const wonRaffle = linked.find(r => r.winnerName || r.status === 'winner_selected' || r.status === 'receipt_confirmed');
+          const productWinnerTag = linked.length === 0
+            ? ''
+            : wonRaffle
+              ? `<div class="product-meta" style="margin-top:4px;color:#4ade80">
+                   🏆 Won by <strong>${wonRaffle.winnerName || 'selected winner'}</strong>
+                   ${wonRaffle.winnerId ? `<span style="font-family:monospace;font-size:11px;color:#64748b;margin-left:6px">(User ID: ${wonRaffle.winnerId})</span>` : ''}
+                 </div>`
+              : `<div class="product-meta" style="margin-top:4px;color:#f59e0b">⏳ Not yet won</div>`;
+
+          const raffleInfo = linked.length
+            ? linked.map(r => {
+                const winnerLine = (r.winnerName || r.winnerId)
+                  ? `<span style="color:#4ade80;margin-left:8px">
+                       🏆 ${r.winnerName || '—'}
+                       ${r.winnerId ? `<span style="font-family:monospace;font-size:11px;color:#64748b;margin-left:4px">(${r.winnerId})</span>` : ''}
+                     </span>`
+                  : '';
+                return `<div class="product-meta" style="margin-top:3px">
+                  Raffle: <span style="font-family:monospace;font-size:11px;color:#94a3b8">${r.id}</span>
+                  &nbsp;${statusBadge(r.status)}${winnerLine}
+                </div>`;
+              }).join('')
+            : `<div class="product-meta" style="margin-top:3px">
+                <span style="color:#475569;font-style:italic">Not associated with any raffle</span>
+               </div>`;
+
+          return `
+          <div class="product-item" id="pi-${p.id}">
+            <div style="flex:1">
+              <div class="product-name">${p.name}</div>
+              <div class="product-meta">${fmt(p.retailValue)} retail${p.description ? ' · ' + p.description : ''}</div>
+              ${p.imageUrl ? `<div class="product-meta" style="margin-top:2px;word-break:break-all">${p.imageUrl}</div>` : ''}
+              ${productWinnerTag}
+              <div class="product-meta" style="margin-top:3px;font-family:monospace;font-size:11px;color:#475569">Product ID: ${p.id}</div>
+              ${raffleInfo}
+              <div class="product-edit-form" id="pef-${p.id}">
+                <input type="text"   id="pe-name-${p.id}"  value="${p.name}" placeholder="Name" />
+                <input type="text"   id="pe-desc-${p.id}"  value="${p.description || ''}" placeholder="Description" />
+                <input type="text"   id="pe-img-${p.id}"   value="${p.imageUrl || ''}" placeholder="Image URL" />
+                <input type="number" id="pe-val-${p.id}"   value="${(p.retailValue / 100).toFixed(2)}" placeholder="Retail value (dollars)" min="0.01" step="0.01" />
+                <div class="btn-row">
+                  <button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="saveProduct('${p.id}')">Save</button>
+                  <button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="cancelEdit('${p.id}')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="btn btn-secondary" style="font-size:11px;padding:6px 12px" onclick="editProduct('${p.id}')">Edit</button>
+              <button class="btn btn-danger"    style="font-size:11px;padding:6px 12px" onclick="deleteProduct('${p.id}')">Delete</button>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        card.innerHTML = `<div class="empty" style="color:#fca5a5">Error: ${e.message}</div>`;
+      }
+    }
+
+    function editProduct(id) {
+      document.getElementById('pef-' + id).classList.add('open');
+    }
+    function cancelEdit(id) {
+      document.getElementById('pef-' + id).classList.remove('open');
+    }
+
+    async function saveProduct(id) {
+      try {
+        const name        = document.getElementById('pe-name-' + id).value.trim();
+        const description = document.getElementById('pe-desc-' + id).value.trim();
+        const imageUrl    = document.getElementById('pe-img-' + id).value.trim();
+        const retailValue = Math.round(parseFloat(document.getElementById('pe-val-' + id).value) * 100);
+        await api('PUT', '/admin/product/' + id, { name, description, imageUrl, retailValue });
+        toast('Product updated');
+        loadProducts();
+        loadDrops();
+      } catch (e) { toast(e.message, 'error'); }
+    }
+
+    async function createProduct() {
+      try {
+        const name        = document.getElementById('np-name').value.trim();
+        const description = document.getElementById('np-desc').value.trim();
+        const imageUrl    = document.getElementById('np-image').value.trim();
+        const retailValue = Math.round(parseFloat(document.getElementById('np-value').value) * 100);
+        if (!name || !retailValue) { toast('Name and retail value are required.', 'error'); return; }
+        await api('POST', '/admin/product', { name, description, imageUrl, retailValue });
+        toast('Product created');
+        document.getElementById('np-name').value = '';
+        document.getElementById('np-desc').value = '';
+        document.getElementById('np-image').value = '';
+        document.getElementById('np-value').value = '';
+        loadProducts();
+        loadDrops();
+      } catch (e) { toast(e.message, 'error'); }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Delete this product? This cannot be undone.')) return;
+      try {
+        await api('DELETE', '/admin/product/' + id);
+        toast('Product deleted');
+        loadProducts();
+        loadDrops();
+      } catch (e) {
+        if (e.code === 'PRODUCT_IN_USE') {
+          toast('This product has raffle history and cannot be deleted.', 'error');
+        } else {
+          toast(e.message, 'error');
+        }
+      }
+    }
     async function loadActive() {
       const card = document.getElementById('active-card');
       try {
@@ -173,7 +376,7 @@
             ${data.drop.name}
             <span class="status-badge status-active">Active</span>
           </div>
-          <div class="raffle-id">ID: ${data.raffle.id}</div>
+          <div class="raffle-id">Raffle ID: ${data.raffle.id}</div>
           <hr class="divider" />
           <div class="info-grid">
             <div class="info-item"><label>Retail Value</label><span>${fmt(data.drop.retailValue)}</span></div>
@@ -181,6 +384,8 @@
             <div class="info-item"><label>Min Threshold</label><span>${data.raffle.minTwiqThreshold} Twiqs</span></div>
             <div class="info-item"><label>Max Threshold</label><span>${data.raffle.maxTwiqThreshold} Twiqs</span></div>
             <div class="info-item"><label>Total Bid</label><span>${data.raffle.totalTwiqsBid} Twiqs</span></div>
+            <div class="info-item"><label>Hosted By</label><span>${data.raffle.creatorName || '—'}</span></div>
+            <div class="info-item"><label>Creator ID</label><span style="font-size:11px;word-break:break-all">${data.raffle.createdBy || '—'}</span></div>
           </div>
           <hr class="divider" />
           <div style="margin-bottom:14px">
@@ -194,10 +399,11 @@
           <div class="btn-row">
             <button class="btn btn-secondary" onclick="updateRaffle()">Update Raffle</button>
             <button class="btn btn-danger" onclick="showReplace()">Replace Raffle</button>
+            <button class="btn btn-secondary" onclick="toggleHidden('${data.raffle.id}', ${data.raffle.hidden})" id="hide-btn">${data.raffle.hidden ? 'Unhide Raffle' : 'Hide Raffle'}</button>
           </div>
           <div id="replace-form" style="display:none;margin-top:18px;border-top:1px solid #2d3748;padding-top:16px">
             <div class="card-title" style="font-size:13px;margin-bottom:12px">Replace With New Raffle</div>
-            <label>New Drop</label>
+            <label>Product</label>
             <select id="rep-drop"></select>
             <div class="form-row">
               <div><label>Min Threshold</label><input type="number" id="rep-min" value="500" min="1" /></div>
@@ -238,13 +444,14 @@
 
     async function createRaffle() {
       try {
-        const dropId = document.getElementById('create-drop').value;
+        const productId = document.getElementById('create-drop').value;
         const minTwiqThreshold = parseInt(document.getElementById('create-min').value);
         const maxTwiqThreshold = parseInt(document.getElementById('create-max').value);
         const expiresAt = new Date(document.getElementById('create-expires').value).toISOString();
-        await api('POST', '/admin/raffle', { dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt });
+        await api('POST', '/admin/raffle', { productId, minTwiqThreshold, maxTwiqThreshold, expiresAt });
         toast('Raffle created successfully');
         loadActive();
+        loadHistory();
       } catch (e) {
         toast(e.message, 'error');
       }
@@ -267,13 +474,132 @@
     async function replaceRaffle() {
       if (!activeRaffle) return;
       try {
-        const dropId = document.getElementById('rep-drop').value;
+        const productId = document.getElementById('rep-drop').value;
         const minTwiqThreshold = parseInt(document.getElementById('rep-min').value);
         const maxTwiqThreshold = parseInt(document.getElementById('rep-max').value);
         const expiresAt = new Date(document.getElementById('rep-expires').value).toISOString();
-        await api('POST', '/admin/raffle/' + activeRaffle.id + '/replace', { dropId, minTwiqThreshold, maxTwiqThreshold, expiresAt });
+        await api('POST', '/admin/raffle/' + activeRaffle.id + '/replace', { productId, minTwiqThreshold, maxTwiqThreshold, expiresAt });
         toast('Raffle replaced — new raffle is now active');
         loadActive();
+        loadHistory();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    }
+
+    function statusBadge(status) {
+      const map = {
+        active: 'status-active',
+        closed: 'status-closed',
+        winner_selected: 'status-winner',
+        receipt_confirmed: 'status-confirmed',
+        no_winner: 'status-no-winner',
+      };
+      const cls = map[status] || 'status-none';
+      const label = status.replace(/_/g, ' ');
+      return `<span class="status-badge ${cls}">${label}</span>`;
+    }
+
+    async function loadHistory() {
+      const container = document.getElementById('history-list');
+      try {
+        const raffles = await api('GET', '/admin/raffles');
+        if (!raffles.length) {
+          container.innerHTML = `<div class="card"><div class="empty">No raffles yet.</div></div>`;
+          return;
+        }
+        const items = raffles.map((r, i) => {
+          const summary = r.closedAt
+            ? 'Closed ' + fmtDate(r.closedAt)
+            : 'Created ' + fmtDate(r.createdAt);
+          return `
+            <div class="history-item">
+              <div class="history-row" onclick="toggleHistory(${i})">
+                <div>
+                  <div class="history-drop">${r.dropName}</div>
+                  <div class="history-meta">${summary} &nbsp;·&nbsp; ${r.totalTwiqsBid} Twiqs bid</div>
+                </div>
+                <div class="history-right">
+                  ${r.hidden ? '<span style="font-size:11px;color:#64748b;letter-spacing:0.08em">HIDDEN</span>' : ''}
+                  ${statusBadge(r.status)}
+                  <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;margin:0" onclick="event.stopPropagation();toggleHidden('${r.id}', ${r.hidden})">${r.hidden ? 'Unhide' : 'Hide'}</button>
+                  <span class="history-chevron" id="chev-${i}">▶</span>
+                </div>
+              </div>
+              <div class="history-detail" id="detail-${i}">
+                <div class="detail-grid">
+                  <div class="detail-item"><label>Product</label><span>${r.dropName}</span></div>
+                  <div class="detail-item"><label>Status</label><span>${r.status.replace(/_/g, ' ')}</span></div>
+                  <div class="detail-item"><label>Total Twiqs Bid</label><span>${r.totalTwiqsBid}</span></div>
+                  <div class="detail-item"><label>Min Threshold</label><span>${r.minTwiqThreshold}</span></div>
+                  <div class="detail-item"><label>Max Threshold</label><span>${r.maxTwiqThreshold}</span></div>
+                  <div class="detail-item"><label>Retail Value</label><span>${fmt(r.dropRetailValue)}</span></div>
+                  <div class="detail-item"><label>Winner</label><span>${r.winnerName || '—'}</span></div>
+                  <div class="detail-item"><label>Hosted By</label><span>${r.creatorName || '—'}</span></div>
+                  <div class="detail-item" style="grid-column:1/-1"><label>Creator ID</label><span style="word-break:break-all">${r.createdBy || '—'}</span></div>
+                  <div class="detail-item"><label>Expires At</label><span>${r.expiresAt ? fmtDate(r.expiresAt) : '—'}</span></div>
+                  <div class="detail-item"><label>Closed At</label><span>${r.closedAt ? fmtDate(r.closedAt) : '—'}</span></div>
+                  <div class="detail-item"><label>Created At</label><span>${fmtDate(r.createdAt)}</span></div>
+                  <div class="detail-item"><label>Hidden</label><span>${r.hidden ? '🙈 Yes' : '👁 No'}</span></div>
+                  <div class="detail-item" style="grid-column:1/-1"><label>Raffle ID</label><span style="word-break:break-all">${r.id}</span></div>
+                  <div class="detail-item" style="grid-column:1/-1"><label>Product ID</label><span style="word-break:break-all">${r.productId}</span></div>
+                  <div class="detail-item" style="grid-column:1/-1;padding-top:6px">
+                    <button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="toggleHidden('${r.id}', ${r.hidden})">${r.hidden ? 'Unhide Raffle' : 'Hide Raffle'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+        container.innerHTML = `<div class="card">${items}</div>`;
+      } catch (e) {
+        container.innerHTML = `<div class="card"><div class="empty" style="color:#fca5a5">Error: ${e.message}</div></div>`;
+      }
+    }
+
+    function toggleHistory(i) {
+      const detail = document.getElementById('detail-' + i);
+      const chev = document.getElementById('chev-' + i);
+      const open = detail.classList.toggle('open');
+      chev.classList.toggle('open', open);
+    }
+
+    let _suggestions = [];
+
+    async function fetchSuggestions() {
+      const btn = document.getElementById('suggest-btn');
+      btn.disabled = true;
+      btn.textContent = 'Fetching…';
+      try {
+        _suggestions = await api('GET', '/admin/product-suggestions');
+        const sel = document.getElementById('suggestions-select');
+        sel.innerHTML = '<option value="">— select a product —</option>' +
+          _suggestions.map((s, i) => `<option value="${i}">${s.name}</option>`).join('');
+        document.getElementById('suggestions-panel').style.display = 'block';
+        toast(`${_suggestions.length} suggestions loaded`);
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✦ Suggest Product';
+      }
+    }
+
+    function applySuggestion() {
+      const idx = document.getElementById('suggestions-select').value;
+      if (idx === '') return;
+      const s = _suggestions[parseInt(idx)];
+      document.getElementById('np-name').value  = s.name;
+      document.getElementById('np-desc').value  = s.description;
+      document.getElementById('np-image').value = s.imageUrl;
+      document.getElementById('np-value').value = (s.retailValue / 100).toFixed(2);
+    }
+
+    async function toggleHidden(raffleId, currentlyHidden) {
+      try {
+        await api('PATCH', '/admin/raffle/' + raffleId + '/hidden', { hidden: !currentlyHidden });
+        toast(currentlyHidden ? 'Raffle is now visible to users' : 'Raffle hidden from users');
+        loadActive();
+        loadHistory();
       } catch (e) {
         toast(e.message, 'error');
       }
@@ -282,7 +608,9 @@
     // Init
     document.getElementById('create-expires').value = defaultExpiry();
     loadDrops();
+    loadProducts();
     loadActive();
+    loadHistory();
   </script>
 </body>
 </html>

@@ -23,8 +23,10 @@ app.get("/commerce/*", (req, res) =>
 // /buy API routes (must come before static so /buy/api/* hits the router)
 const raffleRouter = require("./buy/server/raffleRouter");
 const twiqRouter = require("./buy/server/twiqRouter");
+const telemetryRouter = require("./buy/server/telemetryRouter");
 app.use("/buy/api", raffleRouter);
 app.use("/buy/api", twiqRouter);
+app.use("/buy/api", telemetryRouter);
 
 // Seed default user from ADMIN_TOKEN on startup
 const crypto = require("crypto");
@@ -33,7 +35,11 @@ if (process.env.ADMIN_TOKEN) {
   const tokenHash = crypto.createHash("sha256").update(process.env.ADMIN_TOKEN).digest("hex");
   das.getUserByToken(tokenHash, "startup").then(existing => {
     if (!existing) {
-      return das.createUser({ displayName: "Admin", tokenHash }, "startup");
+      return das.createUser({ displayName: "Twiqit", tokenHash }, "startup");
+    }
+    // Update display name to Twiqit if it's still the old default
+    if (existing.displayName === "Admin") {
+      return das.updateUser(existing.id, { displayName: "Twiqit" }, "startup");
     }
   }).catch(err => console.error("User seed error:", err.message));
 }
@@ -61,4 +67,7 @@ app.listen(port, "0.0.0.0", () => {
   // Start raffle expiration scheduler
   const raffleScheduler = require("./buy/server/raffleScheduler");
   raffleScheduler.start();
+  // Start AI Ops Agent
+  const opsAgent = require("./buy/server/opsAgent");
+  opsAgent.start();
 });
