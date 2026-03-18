@@ -164,6 +164,26 @@ async function getUserBidTotalForRaffle(raffleId, userId, caller = 'unknown') {
   return rows[0].total;
 }
 
+// Get the most recent raffle where a given user is the winner
+async function getWinnerRaffleForUser(userId, caller = 'unknown') {
+  const { rows } = await pool.query(
+    `SELECT r.*, d.name AS drop_name, d.image_url AS drop_image_url
+     FROM raffles r
+     JOIN drops d ON d.id = r.drop_id
+     WHERE r.winner_id = $1
+     ORDER BY r.closed_at DESC LIMIT 1`,
+    [userId]
+  );
+  const row = rows[0] ?? null;
+  audit('read', 'raffles', row?.id ?? null, caller, !!row);
+  if (!row) return null;
+  return {
+    ...rowToRaffle(row),
+    dropName: row.drop_name,
+    dropImageUrl: row.drop_image_url,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Drops
 // ---------------------------------------------------------------------------
@@ -347,6 +367,7 @@ module.exports = {
   createBidEntry,
   getBidEntriesByRaffleId,
   getUserBidTotalForRaffle,
+  getWinnerRaffleForUser,
   getDropById,
   listDrops,
   createRaffle,

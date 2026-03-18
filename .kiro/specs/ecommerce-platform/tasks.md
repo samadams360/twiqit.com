@@ -143,7 +143,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
 - [ ] 8. Slice 8 Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 9. Slice 9 — Raffle Expiration and Winner Selection
+- [x] 9. Slice 9 — Raffle Expiration and Winner Selection
   - [x] 9.1 Implement `Winner_Selector` module
     - `selectWinner(bidEntries: BidEntry[]): BidEntry` using a cryptographically seeded random index
     - Export as an interface + default implementation so the dependency can be swapped
@@ -176,15 +176,15 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - **Validates: Requirements 7.1**
   - **Checkpoint:** A raffle with a past `expiresAt` and sufficient bids is automatically closed, a winner is selected, and the winner receives an email notification.
 
-- [ ] 10. Slice 10 — Winner Receipt Confirmation
-  - [ ] 10.1 Implement receipt confirmation endpoint
+- [-] 10. Slice 10 — Winner Receipt Confirmation
+  - [x] 10.1 Implement receipt confirmation endpoint
     - `POST /buy/api/raffle/:id/confirm-receipt` — set raffle status to `receipt_confirmed`
     - HTTP 409 if raffle is not in `winner_selected` state
     - _Requirements: 7.2, 7.3_
   - [ ]* 10.2 Write property test for receipt confirmation status transition
     - **Property 16: Receipt confirmation updates raffle status**
     - **Validates: Requirements 7.2**
-  - [ ] 10.3 Add "Confirm Receipt" UI
+  - [x] 10.3 Add "Confirm Receipt" UI
     - If the most recent raffle has status `winner_selected`, show a "Confirm Receipt" button
     - On click, call `POST /buy/api/raffle/:id/confirm-receipt` and update the displayed raffle status
     - _Requirements: 7.2, 7.3_

@@ -231,6 +231,49 @@ router.post('/raffle/:id/bid', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /buy/api/raffle/:id/confirm-receipt
+// Body: { userId }  — winner confirms they received the item
+// ---------------------------------------------------------------------------
+router.post('/raffle/:id/confirm-receipt', async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body ?? {};
+  if (!userId) return errResponse(res, 400, 'MISSING_FIELDS', 'userId is required.');
+
+  try {
+    const raffle = await das.getRaffleById(id, 'raffle_service');
+    if (!raffle) return errResponse(res, 404, 'NOT_FOUND', 'Raffle not found.');
+    if (raffle.status !== 'winner_selected') {
+      return errResponse(res, 409, 'INVALID_STATUS',
+        'Receipt can only be confirmed for raffles in winner_selected state.');
+    }
+    if (raffle.winnerId !== userId) {
+      return errResponse(res, 403, 'NOT_WINNER', 'Only the winner can confirm receipt.');
+    }
+    const updated = await das.updateRaffle(id, { status: 'receipt_confirmed' }, 'raffle_service');
+    log('info', 'receipt_confirmed', { raffleId: id, userId });
+    res.json(updated);
+  } catch (err) {
+    log('error', 'confirm_receipt', { message: err.message });
+    errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /buy/api/raffle/my-win?userId=<id> — get user's most recent won raffle
+// ---------------------------------------------------------------------------
+router.get('/raffle/my-win', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) return errResponse(res, 400, 'MISSING_FIELDS', 'userId query param is required.');
+  try {
+    const raffle = await das.getWinnerRaffleForUser(userId, 'raffle_service');
+    res.json(raffle ?? null);
+  } catch (err) {
+    log('error', 'get_my_win', { message: err.message });
+    errResponse(res, 500, 'INTERNAL_ERROR', 'Something went wrong.');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /buy/api/raffle/:id/my-bids?userId=<id> — user's total bids on a raffle
 // ---------------------------------------------------------------------------
 router.get('/raffle/:id/my-bids', async (req, res) => {

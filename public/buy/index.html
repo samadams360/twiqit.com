@@ -141,6 +141,27 @@
       background: #f1f5f9; color: #64748b; font-size: 11px;
       letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px;
     }
+    /* Winner banner */
+    .winner-banner {
+      width: 100%; max-width: 520px;
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+      padding: 32px 28px; text-align: center; margin-bottom: 16px;
+    }
+    .winner-icon { font-size: 48px; margin-bottom: 12px; }
+    .winner-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px; }
+    .winner-sub { font-size: 14px; color: #555; margin: 0 0 24px; }
+    .btn-confirm {
+      padding: 12px 28px; border-radius: 8px; border: none; cursor: pointer;
+      background: #304d44; color: #fff; font-size: 14px; font-weight: 600;
+      letter-spacing: 0.04em; transition: opacity 0.15s;
+    }
+    .btn-confirm:hover { opacity: 0.85; }
+    .btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+    .confirmed-badge {
+      display: inline-block; padding: 8px 18px; border-radius: 20px;
+      background: #dcfce7; color: #16a34a; font-size: 13px; font-weight: 600;
+    }
     .back-link {
       display: inline-block; margin-top: 20px;
       font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
@@ -324,6 +345,45 @@
       );
     }
 
+    // ---- Winner banner ----
+    function WinnerBanner({ user, winRaffle, onConfirmed }) {
+      const [confirming, setConfirming] = useState(false);
+      const [status, setStatus] = useState(winRaffle.status);
+
+      async function confirmReceipt() {
+        setConfirming(true);
+        try {
+          const r = await fetch(`/buy/api/raffle/${winRaffle.id}/confirm-receipt`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          if (r.ok) { setStatus('receipt_confirmed'); onConfirmed && onConfirmed(); }
+        } catch { /* ignore */ }
+        setConfirming(false);
+      }
+
+      return (
+        <div className="winner-banner">
+          <div className="winner-icon">🏆</div>
+          <p className="winner-title">You won!</p>
+          <p className="winner-sub">
+            Congratulations — you won the raffle for <strong>{winRaffle.dropName}</strong>.
+            {status === 'winner_selected'
+              ? ' Please confirm receipt once you receive your item.'
+              : ''}
+          </p>
+          {status === 'winner_selected' ? (
+            <button className="btn-confirm" onClick={confirmReceipt} disabled={confirming}>
+              {confirming ? 'Confirming…' : 'Confirm Receipt'}
+            </button>
+          ) : (
+            <span className="confirmed-badge">✓ Receipt Confirmed</span>
+          )}
+        </div>
+      );
+    }
+
     // ---- Twiq progress bar ----
     function TwiqProgress({ total, min, max }) {
       const pct = max > 0 ? Math.min((total / max) * 100, 100) : 0;
@@ -459,6 +519,7 @@
       const [user, setUser] = useState(getSavedUser);
       const [drop, setDrop] = useState({ status: 'loading', data: null });
       const [bidBalance, setBidBalance] = useState(null);
+      const [winRaffle, setWinRaffle] = useState(null);
 
       useEffect(() => {
         fetch('/buy/api/raffle/active')
@@ -466,6 +527,19 @@
           .then(data => setDrop({ status: 'done', data }))
           .catch(() => setDrop({ status: 'done', data: null }));
       }, []);
+
+      useEffect(() => {
+        if (!user) return;
+        fetch(`/buy/api/raffle/my-win?userId=${user.id}`)
+          .then(r => r.json())
+          .then(data => {
+            // Only show banner for winner_selected or receipt_confirmed
+            if (data && (data.status === 'winner_selected' || data.status === 'receipt_confirmed')) {
+              setWinRaffle(data);
+            }
+          })
+          .catch(() => {});
+      }, [user]);
 
       function handleSignOut() { clearUser(); setUser(null); }
       function handleSignIn(u) { setUser(u); }
@@ -482,6 +556,9 @@
         <>
           <Header user={user} onSignOut={handleSignOut} />
           <BalanceBar user={user} externalBalance={bidBalance} />
+          {winRaffle && (
+            <WinnerBanner user={user} winRaffle={winRaffle} onConfirmed={() => {}} />
+          )}
           {drop.data
             ? <DropCard
                 drop={drop.data.drop}
