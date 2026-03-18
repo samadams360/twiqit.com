@@ -60,6 +60,7 @@ Twiqit Alpha is a single-item e-commerce platform inspired by the Woot model, wh
 2. IF a User's Twiq balance is insufficient to cover the bid amount, THEN THE System SHALL reject the bid and notify the User.
 3. WHILE a Raffle is active, THE System SHALL accept bids from authenticated Users.
 4. WHEN a Raffle is no longer active, THE System SHALL reject any further bid submissions.
+5. THE System SHALL display the current total Twiqs bid, the minimum Twiq threshold, and the maximum Twiq threshold for the active Raffle on the homepage, with a visual progress indicator showing how close the Raffle is to each threshold.
 
 ---
 
