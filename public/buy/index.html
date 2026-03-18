@@ -105,6 +105,37 @@
     .bid-feedback { font-size: 13px; margin-top: 8px; }
     .bid-feedback.success { color: #16a34a; }
     .bid-feedback.error   { color: #dc2626; }
+    /* Twiq progress bar */
+    .twiq-progress { margin-bottom: 20px; }
+    .twiq-progress-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .twiq-progress-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
+    .twiq-progress-count { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+    .twiq-track {
+      position: relative; height: 10px; background: #e2e8f0; border-radius: 99px; overflow: visible;
+    }
+    .twiq-fill {
+      height: 100%; border-radius: 99px; background: #304d44;
+      transition: width 0.4s ease; min-width: 0;
+    }
+    .twiq-fill.at-max { background: #933333; }
+    /* min marker */
+    .twiq-marker {
+      position: absolute; top: -3px; width: 2px; height: 16px;
+      background: #f59e0b; border-radius: 2px;
+      transform: translateX(-50%);
+    }
+    .twiq-marker-label {
+      position: absolute; top: 16px; transform: translateX(-50%);
+      font-size: 10px; color: #f59e0b; white-space: nowrap; font-weight: 600;
+    }
+    .twiq-thresholds {
+      display: flex; justify-content: space-between;
+      margin-top: 18px; font-size: 12px; color: #888;
+    }
+    .twiq-thresholds span strong { color: #1a1a1a; font-size: 13px; }
     .raffle-closed-badge {
       display: inline-block; padding: 4px 10px; border-radius: 20px;
       background: #f1f5f9; color: #64748b; font-size: 11px;
@@ -293,11 +324,38 @@
       );
     }
 
+    // ---- Twiq progress bar ----
+    function TwiqProgress({ total, min, max }) {
+      const pct = max > 0 ? Math.min((total / max) * 100, 100) : 0;
+      const minPct = max > 0 ? Math.min((min / max) * 100, 100) : 0;
+      const atMax = total >= max;
+      return (
+        <div className="twiq-progress">
+          <div className="twiq-progress-header">
+            <span className="twiq-progress-label">Twiqs Bid</span>
+            <span className="twiq-progress-count">{total.toLocaleString()} / {max.toLocaleString()}</span>
+          </div>
+          <div className="twiq-track">
+            <div className={`twiq-fill${atMax ? ' at-max' : ''}`} style={{ width: `${pct}%` }} />
+            {/* Min threshold marker */}
+            <div className="twiq-marker" style={{ left: `${minPct}%` }}>
+              <div className="twiq-marker-label">min</div>
+            </div>
+          </div>
+          <div className="twiq-thresholds">
+            <span>Min to close: <strong>{min.toLocaleString()}</strong></span>
+            <span>Max (instant close): <strong>{max.toLocaleString()}</strong></span>
+          </div>
+        </div>
+      );
+    }
+
     // ---- Drop display ----
     function DropCard({ drop, raffle, user, onBidSuccess }) {
       const [bidAmount, setBidAmount] = useState('');
       const [bidding, setBidding] = useState(false);
-      const [feedback, setFeedback] = useState(null); // { type: 'success'|'error', msg }
+      const [feedback, setFeedback] = useState(null);
+      const [totalBid, setTotalBid] = useState(raffle.totalTwiqsBid ?? 0);
 
       const isActive = raffle.status === 'active';
 
@@ -319,6 +377,7 @@
           } else {
             setFeedback({ type: 'success', msg: `Bid placed! New balance: ${data.balance} Twiqs` });
             setBidAmount('');
+            setTotalBid(data.raffle?.totalTwiqsBid ?? totalBid + amount);
             onBidSuccess(data.balance);
           }
         } catch {
@@ -338,6 +397,11 @@
               <div><strong>{formatCurrency(drop.retailValue)}</strong>Retail Value</div>
               <div><strong>{formatExpiry(raffle.expiresAt)}</strong>Raffle Closes</div>
             </div>
+            <TwiqProgress
+              total={totalBid}
+              min={raffle.minTwiqThreshold}
+              max={raffle.maxTwiqThreshold}
+            />
             {isActive ? (
               <form onSubmit={placeBid}>
                 <div className="bid-row">
