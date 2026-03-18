@@ -49,16 +49,16 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - `PUT /buy/api/admin/raffle/:id` — update active raffle; preserve all existing bid entries
     - `POST /buy/api/admin/raffle/:id/replace` — close current raffle (status → `closed`), create new active raffle
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
-  - [ ]* 3.2 Write property test for raffle creation validation
+  - [x] 3.2 Write property test for raffle creation validation
     - **Property 8: Raffle creation requires all threshold fields**
     - **Validates: Requirements 4.2**
-  - [ ]* 3.3 Write property test for raffle update preserves bids
+  - [x] 3.3 Write property test for raffle update preserves bids
     - **Property 9: Raffle update preserves bid entries**
     - **Validates: Requirements 4.3**
-  - [ ]* 3.4 Write property test for raffle replacement
+  - [x] 3.4 Write property test for raffle replacement
     - **Property 10: Raffle replacement closes old and opens new**
     - **Validates: Requirements 4.4**
-  - [ ]* 3.5 Write property test for at-most-one active raffle
+  - [x] 3.5 Write property test for at-most-one active raffle
     - **Property 1: At most one active Drop at any time**
     - **Validates: Requirements 1.1**
   - **Checkpoint:** Admin can `POST /buy/api/admin/raffle` to create a raffle and immediately see it appear on the homepage at `twiqit.com/buy`.
@@ -101,13 +101,13 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - `GET /buy/api/twiqs/balance` — return current balance
     - `POST /buy/api/twiqs/cashout` — deduct balance, initiate bank transfer; on failure roll back and notify user
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
-  - [ ]* 6.3 Write property test for ad watch credit
+  - [x] 6.3 Write property test for ad watch credit
     - **Property 2: Ad watch credits exactly 100 Twiqs**
     - **Validates: Requirements 2.2**
-  - [ ]* 6.4 Write property test for ad watch cooldown
+  - [x] 6.4 Write property test for ad watch cooldown
     - **Property 3: Ad watch 24-hour cooldown enforcement**
     - **Validates: Requirements 2.3, 2.4**
-  - [ ]* 6.5 Write property test for cashout balance invariant
+  - [x] 6.5 Write property test for cashout balance invariant
     - **Property 4: Cashout balance invariant**
     - **Validates: Requirements 2.6, 2.7**
   - [x] 6.6 Add Twiq balance display and "Watch Ad" UI to React homepage
@@ -125,13 +125,13 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - HTTP 422 on insufficient balance; HTTP 409 if raffle not active
     - After each bid, check if `totalTwiqsBid >= maxTwiqThreshold`; if so, close raffle and trigger winner selection
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 5.1_
-  - [ ]* 7.3 Write property test for bid deduction and recording
+  - [x] 7.3 Write property test for bid deduction and recording
     - **Property 5: Bid deduction and recording**
     - **Validates: Requirements 3.1, 3.2**
-  - [ ]* 7.4 Write property test for closed raffle bid rejection
+  - [x] 7.4 Write property test for closed raffle bid rejection
     - **Property 6: Closed raffle rejects bids**
     - **Validates: Requirements 3.4**
-  - [ ]* 7.5 Write property test for max threshold close
+  - [x] 7.5 Write property test for max threshold close
     - **Property 11: Max threshold triggers immediate close**
     - **Validates: Requirements 5.1**
   - [x] 7.6 Add bid submission UI to React homepage
@@ -148,7 +148,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - `selectWinner(bidEntries: BidEntry[]): BidEntry` using a cryptographically seeded random index
     - Export as an interface + default implementation so the dependency can be swapped
     - _Requirements: 6.1, 6.2_
-  - [ ]* 9.2 Write property test for winner validity
+  - [x] 9.2 Write property test for winner validity
     - **Property 14: Winner is always a valid bid entry**
     - **Validates: Requirements 6.1, 6.3**
   - [x] 9.3 Implement `Notification_Service` with pluggable email provider
@@ -157,7 +157,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - `sendAdCooldownNotice(user, eligibleAt)`
     - `sendAdminRaffleUnderThreshold(admin, raffle)`
     - _Requirements: 7.1, 2.7, 2.4, 5.3_
-  - [ ]* 9.4 Write unit tests for Notification_Service
+  - [x] 9.4 Write unit tests for Notification_Service
     - Test each method dispatches to the email provider with the correct payload
     - _Requirements: 7.1_
   - [x] 9.5 Implement raffle expiration scheduler
@@ -165,13 +165,13 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - If `totalTwiqsBid >= minTwiqThreshold`: close raffle, invoke `Winner_Selector`, record winner, call `sendWinnerNotification`
     - If `totalTwiqsBid < minTwiqThreshold`: set status to `no_winner`, call `sendAdminRaffleUnderThreshold`
     - _Requirements: 5.2, 5.3_
-  - [ ]* 9.6 Write property test for time expiration with sufficient bids
+  - [x] 9.6 Write property test for time expiration with sufficient bids
     - **Property 12: Time expiration triggers close**
     - **Validates: Requirements 5.2**
-  - [ ]* 9.7 Write property test for under-threshold expiration
+  - [x] 9.7 Write property test for under-threshold expiration
     - **Property 13: Under-threshold expiration yields no winner**
     - **Validates: Requirements 5.3**
-  - [ ]* 9.8 Write property test for winner notification
+  - [x] 9.8 Write property test for winner notification
     - **Property 15: Winner notification is sent**
     - **Validates: Requirements 7.1**
   - **Checkpoint:** A raffle with a past `expiresAt` and sufficient bids is automatically closed, a winner is selected, and the winner receives an email notification.
@@ -181,7 +181,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - `POST /buy/api/raffle/:id/confirm-receipt` — set raffle status to `receipt_confirmed`
     - HTTP 409 if raffle is not in `winner_selected` state
     - _Requirements: 7.2, 7.3_
-  - [ ]* 10.2 Write property test for receipt confirmation status transition
+  - [x] 10.2 Write property test for receipt confirmation status transition
     - **Property 16: Receipt confirmation updates raffle status**
     - **Validates: Requirements 7.2**
   - [x] 10.3 Add "Confirm Receipt" UI
@@ -233,7 +233,7 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - Persist log events to a searchable index; enforce 30-day retention
     - Watchdog: if agent emits no heartbeat within threshold, send fallback alert via `Notification_Service`
     - _Requirements: 11.6, 11.7_
-  - [ ]* 13.6 Write unit tests for AI_Ops_Agent anomaly detection
+  - [x] 13.6 Write unit tests for AI_Ops_Agent anomaly detection
     - Test each threshold rule fires at the correct boundary value
     - Test that alerts are dispatched to Notification_Service on breach
     - _Requirements: 11.2, 11.5_
@@ -257,15 +257,15 @@ Vertical-slice implementation: each slice delivers something visible and testabl
     - All 26 DAS functions emit `audit(op, table, recordId, caller, success)` entries to stdout
     - Each entry includes: timestamp, service, severity, op, table, recordId, caller, success
     - _Requirements: 9.4_
-  - [ ]* 14.5 Write property test for PII encryption round-trip
+  - [x] 14.5 Write property test for PII encryption round-trip
     - Verify that writing and reading back a user record returns the original plaintext bankAccountInfo
     - **Validates: Requirements 9.4**
-  - [ ]* 14.6 Write remaining property-based tests not yet covered
+  - [x] 14.6 Write remaining property-based tests not yet covered
     - Any correctness properties from the design not yet covered by earlier slices
     - Each test tagged: `// Feature: ecommerce-platform, Property {N}: {property_text}`
   - **Checkpoint:** All property-based tests pass. No plaintext PII in the DB. All queries are parameterized. Audit log entries present for every DAS operation.
 
-- [ ] 15. Slice 15 Final Checkpoint — Ensure all tests pass
+- [x] 15. Slice 15 Final Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
